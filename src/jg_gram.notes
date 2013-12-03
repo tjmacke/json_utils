@@ -1,0 +1,125 @@
+Json Structure.  (See json.org for complete json description.)
+
+1.	Json is very popular data exchange and serialization format.  It's simple and its constructs are directly supported by
+	all modern languages.
+
+2.	Json supports 8 types of values.  Six are  atomic: null for "no value", true, false for boolean values, integer and real for
+	numeric values and strings.  Both integer and real are base 10.  Real values are integers that contain either an internal decimal 
+	point (3.14), have an exponent (10e3) or both (6.022e23). Strings are double quoted (") runs of utf-8 characters using backslash 
+	escapes.  Strings may contain any utf-8 character (suitably escaped) except \0 (\u0000). The final two types are container types:
+	the object and the array.
+
+3.	Json objects are delimited by braces { ... } and contain zero or more key value pairs. A key is json string the value is any json value
+	including an object or array,  The elements of an object are unordered.  Iteration over an object is permitted, but the order in which
+	the values are returned is undefined.
+
+4.	Json arrays are delimited by brackets [ ... ] and contain zero or more json values. These values may have different types.  Array indexes
+	begin at 0 and end at N-1 where N is the number values in the array.  Negative indexes are permitted and are understood to be N-1, N-2, etc.
+
+Json Usage.
+
+1.	Json blobs range in complexity from trivial like this log message:
+
+		{ "ts": 1324830675.076, "lv": 4, "rh": "50.57.61.4", "msg": "File does not exist: /var/www/no-such-file" }
+
+	to extremely complex like this (edited, original is 88K) IOS app description: (The number is nesting level.)
+
+	1	{
+		  "custom_id":78989893,
+		  ...
+	2	  "results":[
+	3	    {
+		      "rating":4.3038327526,
+		      ...
+	4	      "editions":[
+	5		{
+			  "rating":4.5,
+			  ...
+	6		  "custom":{
+			    "url":"http:\/\/itunes.apple.com\/us\/app\/hangman-free\/id327449554?mt=8",
+	7		    "features":{
+			      "category":"Games",
+			      ...
+	8		      "languages":[
+				"English",
+				...
+	8		      ],
+			      ...
+	7		    }
+	6		  }
+	5		},
+			...
+	4	      ],
+		      "url":"http:\/\/www.optimesoftware.com",
+		      ...
+	4	      "custom":{
+			"url":"http:\/\/itunes.apple.com\/us\/app\/hangman-pro-hd\/id366248764?mt=8",
+	5		"features":{
+			  "category":"Games",
+			  ...
+	6		  "languages":[
+			    "English",
+			    ...
+	6		  ],
+			  ...
+	5		}
+	4	      },
+		      ...
+	3	    },
+		    ..
+	2	  ],
+	2	  "platform_ids":[
+		    2004,
+		    ...
+	2	  ],
+		  ...
+	1	}
+
+2.	How do you select parts of such a structure.  Well the top level structure is either an array or object.  This structure
+	is anonymous, but since there is only one, it doesn't need a name, but for now let's call it TOP.  Since json is derived
+	from javascript, if TOP is an array, we might use TOP[0] to select the first element; if TOP is an object the TOP["key_1"]
+	would select tha value whose key is "key_1".  If the return value has internal structure we would just add addtional selectors
+	to "drill down" to what we need: TOP[2]["name"]["first"], etc.
+
+3.	Do we need to name the top level object? The answer depends on whether component selection always start at the top level or 
+	is allowed to be reletive to some other starting point.  If relative selectors were allowed, then ["name"] is generally undestood
+	to be the first value whose key is "name".  In such cases you do need to be able to anchor the selection at the top level so
+	if you allow relative selection, you do need to name the top object.  But if all selection begins at the top object you don't.
+
+	I've chosen to alway anchor the search at the top level.  I've done this because json of even modest complexity will often use
+	the same key name but at different nesting levels. In the IOS example, the key "custom" is used at levels 4 and 6.  If we allow
+	relative selection for ["custom"] which one do we get?  So top level anchoring requires longer paths but is never ambiguous, thus
+	top level anchoring.  Which of course removes the need for the top level blob to have name so we can just drop it: [1], ["key_1"],
+	[2]["name"]["first"] etc.
+	
+4.	Array indexes.  As mentioned in the secion on json, arrays are indexed from 0 to N-1, where N is the size of the array.  
+
+Examples.
+
+A value is a sequence of selectors
+
+	{"votes"}{"funny"}
+	[3]{"name"}
+
+List of values are fine:
+
+	{"votes"} , {"name"}{"first"}
+
+Object selectors can contain lists of keys:
+
+	{"userid", "name"}
+
+If a key is an identifier, ie starts w/letter, followed by letters, digits, underscores, quotes are not needed
+
+	{userid, name}
+
+Array selectors can have lists of ranges:
+
+	[1, 3:5 9:$]
+
+$ is the last element of the array
+Use $-n, to select from the end of the array
+
+	[$-3:$]
+
+selects the last 4 elements, if the array has >= 4 elts, else it selects the all elements
