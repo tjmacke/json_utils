@@ -250,6 +250,7 @@ selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 			err = 1;
 			goto CLEAN_UP;
 		}
+	}else if(tp->t_tok == TOK_STAR){
 	}else{
 		err = 1;
 		goto CLEAN_UP;
@@ -318,6 +319,22 @@ obj_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 				goto CLEAN_UP;
 			}
 		}
+	}else if(tp->t_tok == TOK_STAR){
+		vp = value_new(VT_STAR, NULL, tp->t_text, NULL);
+		if(vp == NULL){
+			LOG_ERROR("value_new failed for key %s", tp->t_text);
+			err = 1;
+			goto CLEAN_UP;
+		}
+		np_first = np_last = node_new(tp->t_tok, vp);
+		if(np_first == NULL){
+			LOG_ERROR("node_new failed for key %s", tp->t_text);
+			err = 1;
+			goto CLEAN_UP;
+		}
+		vp = NULL;
+		n_nodes++;
+		token_get(sp, tp);
 	}else{
 		err = 1;
 		goto CLEAN_UP;
@@ -360,27 +377,24 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 
 	*np = NULL;
 
-	if(ary_index(sp, tp, &np_first, &slice)){
-		err = 1;
-		goto CLEAN_UP;
-	}
-	vp = value_new(VT_SLICE, &slice, NULL, NULL);
-	if(vp == NULL){
-		LOG_ERROR("value_new failed for slice %d:%d", slice.s_low, slice.s_high);
-		err = 1;
-		goto CLEAN_UP;
-	}
-	np_first = node_new(TOK_LBRACK, vp);
-	if(np_first == NULL){
-		LOG_ERROR("node_new failed for slice %d:%d", slice.s_low, slice.s_high);
-		err = 1;
-		goto CLEAN_UP;
-	}
-	vp = NULL;
-	n_nodes++;
-	for(np_last = np_first; tp->t_tok == TOK_COMMA; np_last = np_next){
+	if(tp->t_tok == TOK_STAR){
+		vp = value_new(VT_STAR, NULL, tp->t_text, NULL);
+		if(vp == NULL){
+			LOG_ERROR("value_new failed for key %s", tp->t_text);
+			err = 1;
+			goto CLEAN_UP;
+		}
+		np_first = np_last = node_new(tp->t_tok, vp);
+		if(np_first == NULL){
+			LOG_ERROR("node_new failed for key %s", tp->t_text);
+			err = 1;
+			goto CLEAN_UP;
+		}
+		vp = NULL;
+		n_nodes++;
 		token_get(sp, tp);
-		if(ary_index(sp, tp, &np_next, &slice)){
+	}else{
+		if(ary_index(sp, tp, &np_first, &slice)){
 			err = 1;
 			goto CLEAN_UP;
 		}
@@ -390,15 +404,36 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 			err = 1;
 			goto CLEAN_UP;
 		}
-		np_next = node_new(TOK_LBRACK, vp);
-		if(np_next == NULL){
+		np_first = node_new(TOK_LBRACK, vp);
+		if(np_first == NULL){
 			LOG_ERROR("node_new failed for slice %d:%d", slice.s_low, slice.s_high);
 			err = 1;
 			goto CLEAN_UP;
 		}
 		vp = NULL;
 		n_nodes++;
-		np_last->n_next = np_next;
+		for(np_last = np_first; tp->t_tok == TOK_COMMA; np_last = np_next){
+			token_get(sp, tp);
+			if(ary_index(sp, tp, &np_next, &slice)){
+				err = 1;
+				goto CLEAN_UP;
+			}
+			vp = value_new(VT_SLICE, &slice, NULL, NULL);
+			if(vp == NULL){
+				LOG_ERROR("value_new failed for slice %d:%d", slice.s_low, slice.s_high);
+				err = 1;
+				goto CLEAN_UP;
+			}
+			np_next = node_new(TOK_LBRACK, vp);
+			if(np_next == NULL){
+				LOG_ERROR("node_new failed for slice %d:%d", slice.s_low, slice.s_high);
+				err = 1;
+				goto CLEAN_UP;
+			}
+			vp = NULL;
+			n_nodes++;
+			np_last->n_next = np_next;
+		}
 	}
 
 	vp = value_new(VT_ARY, NULL, NULL, np_first);
@@ -781,6 +816,12 @@ value_new(int type, const SLICE_T *sp, const char *str, NODE_T *nodes)
 			err = 1;
 			goto CLEAN_UP;
 		}
+	}else if(type == VT_STAR){
+		vp->v_value.v_key = strdup("*");
+		if(vp->v_value.v_key == NULL){
+			err = 1;
+			goto CLEAN_UP;
+		}
 	}else if(type == VT_OBJ || type == VT_ARY || type == VT_VALS || type == VT_VLIST){
 		NODE_T	*np;
 		int	n_nodes;
@@ -842,7 +883,7 @@ JG_value_delete(VALUE_T	*vp)
 			}
 			free(vp->v_value.v_vtab);
 		}
-	}else if(vp->v_type == VT_KEY){
+	}else if(vp->v_type == VT_KEY || vp->v_type == VT_STAR){
 		if(vp->v_value.v_key != NULL)
 			free(vp->v_value.v_key);
 	}
@@ -880,7 +921,7 @@ JG_value_dump(FILE *fp, const VALUE_T *vp, int ilev)
 			else
 				fprintf(fp, "%d", vp->v_value.v_slice.s_high);
 			fprintf(fp, "\n");
-		}else if(vp->v_type == VT_KEY){
+		}else if(vp->v_type == VT_KEY || vp->v_type == VT_STAR){
 			mk_indent(fp, ilev);
 			fprintf(fp, "  key  = %p, %s\n", vp->v_value.v_key, vp->v_value.v_key ? vp->v_value.v_key : "NULL");
 		}else if(vp->v_type == VT_OBJ || vp->v_type == VT_ARY || vp->v_type == VT_VALS || vp->v_type == VT_VLIST){

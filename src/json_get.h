@@ -4,10 +4,11 @@
 // TODO: Allow regexp's for object selectors?
 #define	VT_SLICE	0	// an array slice, an array element is i:i
 #define	VT_KEY		1	// the key of a key:value pair in an object
-#define	VT_OBJ		2	// points to a value table holding the requested keys of an object
-#define	VT_ARY		3	// points to a value table holding the requested slices of an array
-#define	VT_VALS		4	// points to a value table holding another value table with selectors
-#define	VT_VLIST	5	// points to a value table holding another value table with values
+#define	VT_STAR		2	// All keys of an object. {*} uses obj semantics, [*] uses array semantics
+#define	VT_OBJ		3	// points to a value table holding the requested keys of an object
+#define	VT_ARY		4	// points to a value table holding the requested slices of an array
+#define	VT_VALS		5	// points to a value table holding another value table with selectors
+#define	VT_VLIST	6	// points to a value table holding another value table with values
 
 #define	ND_INDENT	2	// 2 spaces for each indent leven for node_dump()
 
