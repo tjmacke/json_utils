@@ -44,6 +44,7 @@ idx_list	: idx
 		;
 idx		: elt
 		| elt SYM_COLON elt
+		| elt SYM_COLON elt SYM_COLON elt
 		;
 elt		: SYM_INT
 		| SYM_DOLLAR

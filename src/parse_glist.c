@@ -74,6 +74,9 @@ static	int
 obj_selector(const char **, TOKEN_T *, NODE_T **);
 
 static	int
+key_list(const char **, TOKEN_T *, NODE_T **);
+
+static	int
 ary_selector(const char **, TOKEN_T *, NODE_T **);
 
 static	int
@@ -271,53 +274,16 @@ static	int
 obj_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 {
 	NODE_T	*np_first = NULL;
-	NODE_T	*np_last = NULL;;
-	NODE_T	*np_next = NULL;
-	int	n_nodes = 0;
 	VALUE_T	*vp = NULL;
 	int	err = 0;
 
 	*np = NULL;
 
 	if(tp->t_tok == TOK_IDENT || tp->t_tok == TOK_STRING){
-		vp = value_new(VT_KEY, NULL, tp->t_text, NULL);
-		if(vp == NULL){
-			LOG_ERROR("value_new failed for key %s", tp->t_text);
+		if(key_list(sp, tp, &np_first)){
+			LOG_ERROR("key_list failed");
 			err = 1;
 			goto CLEAN_UP;
-		}
-		np_first = np_last = node_new(tp->t_tok, vp);
-		if(np_first == NULL){
-			LOG_ERROR("node_new failed for key %s", tp->t_text);
-			err = 1;
-			goto CLEAN_UP;
-		}
-		vp = NULL;
-		n_nodes++;
-		token_get(sp, tp);
-		for(np_last = np_first; tp->t_tok == TOK_COMMA; np_last = np_next){
-			token_get(sp, tp);
-			if(tp->t_tok == TOK_IDENT || tp->t_tok == TOK_STRING){
-				vp = value_new(VT_KEY, NULL, tp->t_text, NULL);
-				if(vp == NULL){
-					LOG_ERROR("value_new failed for key %s", tp->t_text);
-					err = 1;
-					goto CLEAN_UP;
-				}
-				np_next = node_new(tp->t_tok, vp);
-				if(np_next == NULL){
-					LOG_ERROR("node_new failed for key %s", tp->t_text);
-					err = 1;
-					goto CLEAN_UP;
-				}
-				vp = NULL;
-				n_nodes++;
-				np_last->n_next = np_next;
-				token_get(sp, tp);
-			}else{
-				err = 1;
-				goto CLEAN_UP;
-			}
 		}
 	}else if(tp->t_tok == TOK_STAR){
 		vp = value_new(VT_STAR, NULL, tp->t_text, NULL);
@@ -326,14 +292,13 @@ obj_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 			err = 1;
 			goto CLEAN_UP;
 		}
-		np_first = np_last = node_new(tp->t_tok, vp);
+		np_first = node_new(tp->t_tok, vp);
 		if(np_first == NULL){
 			LOG_ERROR("node_new failed for key %s", tp->t_text);
 			err = 1;
 			goto CLEAN_UP;
 		}
 		vp = NULL;
-		n_nodes++;
 		token_get(sp, tp);
 	}else{
 		err = 1;
@@ -360,6 +325,69 @@ CLEAN_UP : ;
 		JG_value_delete(vp);
 	if(np_first != NULL)
 		node_delete_list(np_first);
+
+	return err;
+}
+
+static	int
+key_list(const char **sp, TOKEN_T *tp, NODE_T **np_first)
+{
+	NODE_T	*np_last = NULL;;
+	NODE_T	*np_next = NULL;
+	VALUE_T	*vp = NULL;
+	int	err = 0;
+
+	*np_first = NULL;
+
+	vp = value_new(VT_KEY, NULL, tp->t_text, NULL);
+	if(vp == NULL){
+		LOG_ERROR("value_new failed for key %s", tp->t_text);
+		err = 1;
+		goto CLEAN_UP;
+	}
+	*np_first = node_new(tp->t_tok, vp);
+	if(np_first == NULL){
+		LOG_ERROR("node_new failed for key %s", tp->t_text);
+		err = 1;
+		goto CLEAN_UP;
+	}
+	vp = NULL;
+	token_get(sp, tp);
+	for(np_last = *np_first; tp->t_tok == TOK_COMMA; np_last = np_next){
+		token_get(sp, tp);
+		if(tp->t_tok == TOK_IDENT || tp->t_tok == TOK_STRING){
+			vp = value_new(VT_KEY, NULL, tp->t_text, NULL);
+			if(vp == NULL){
+				LOG_ERROR("value_new failed for key %s", tp->t_text);
+				err = 1;
+				goto CLEAN_UP;
+			}
+			np_next = node_new(tp->t_tok, vp);
+			if(np_next == NULL){
+				LOG_ERROR("node_new failed for key %s", tp->t_text);
+				err = 1;
+				goto CLEAN_UP;
+			}
+			vp = NULL;
+			np_last->n_next = np_next;
+			token_get(sp, tp);
+		}else{
+			err = 1;
+			goto CLEAN_UP;
+		}
+	}
+
+CLEAN_UP : ;
+
+	if(vp != NULL)
+		JG_value_delete(vp);
+
+	if(err){
+		if(*np_first != NULL){
+			node_delete_list(*np_first);
+			*np_first = NULL;
+		}
+	}
 
 	return err;
 }
