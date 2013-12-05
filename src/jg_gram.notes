@@ -123,3 +123,39 @@ Use $-n, to select from the end of the array
 	[$-3:$]
 
 selects the last 4 elements, if the array has >= 4 elts, else it selects the all elements
+
+-----
+
+// object gets:
+	//
+	// Let OF = Output Field, NOF = Next Ouput Field
+	// In every case if if the request key does not exist, continue w/o output
+	//
+	// 1. {k}			Sets the value of NOF to the value of k.
+	// 2. {k1, k2, ..., kN}		Sets the values of the next N OF's to the values of k1, k2, ..., kN
+	// 3. {k1}{j1}			Get the value of k1, if it's an object set the value of NOF to the value of _its_ j1
+	// 4. {k1, k2, ..., kN}{j1}	Apply Rule 3 to each k[i] in the first select.  For those that are objects and have member j1, set the value of the NOF's to j1's value.
+	// 5. {k1}{j1, j2, ..., jM}	Get the value of k1, if it's an object set the values of the next M OF's to the values it's j1, j2, ..., jM
+	// 7. {k1, k2, ..., kN}{j1, j2, ..., jM}
+	//				Apply Rule 5 to each k[i] in the first select.  For those that are objects and members j1, j2, ..., jM, set the values of the next M OF's to their values.
+	// 
+	// Examples
+	//
+	// 1. json = {  "votes":{"funny":0, "useulf":5, "cool":2},
+	//		"user_id":"...",
+	//		"review_id":"...",
+	//		"stars":5,
+	//		"date":"2011-01-26",
+	//		"text":"...",
+	//		"type":"review",
+	//		"business_id":"Bid"
+	//	     }
+	// 1. query = {business_id, date, stars} => Bid\t2011-01-26\t5
+	//
+	// 2. json = {	"name":"Angry Birds",
+	//		"features":{..., "bundle_id":"Bid", ..., "category":"Games", ...},
+	//		"icon_url":"URL",
+	//		"description":"Awesome time waster!",
+	//		...
+	//	     }
+	// 2. query = {name, features, icon_url, description}{bundle_id, catetory} => Angry Birds\tBid\tGames\tURL\tAwesome time waster

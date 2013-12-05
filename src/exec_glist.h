@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 int
-JG_exec_glist(FILE *, const json_t *, const VALUE_T *, int);
+JG_exec_glist(FILE *, json_t *, const VALUE_T *, int);
 
 #ifdef	__cplusplus
 }
