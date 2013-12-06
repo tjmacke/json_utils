@@ -204,16 +204,16 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 		}else{	// [k, ...]
 			JG_result_array_push(jg_result);
 			for(i = 0; i < vtab->vn_vtab; i++){
-				int	is_primitive;
-
-				JG_result_array_init(jg_result);
 				vp = vtab->v_vtab[i];
 				js_value = json_object_get(js_get, vp->v_value.v_key);
 				if(js_value != NULL){
-					is_primitive = is_json_primitive(js_value);				
-					if(is_primitive | (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
+					JG_result_array_init(jg_result);
+					if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
 						jr_sprt_json_value(jg_result, js_value);
-					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
+						if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
+							JG_result_print(jg_result);
+						}
+					}else if(c_get + 1 < vp_get->v_value.v_vtab->vn_vtab)
 						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 				}else{
 					// TODO: how to handle missing keys? Ignore them?
