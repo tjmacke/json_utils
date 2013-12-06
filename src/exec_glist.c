@@ -17,10 +17,10 @@ static	int
 exec_get(JG_RESULT_T *, json_t *, json_t *, const VALUE_T *, int, const VALUE_T *, int);
 
 static	int
-exec_object_get(JG_RESULT_T *, json_t *, json_t *, const VALUE_T *, int, const VALUE_T *, int, const VALUE_T *);
+exec_obj_get(JG_RESULT_T *, json_t *, json_t *, const VALUE_T *, int, const VALUE_T *, int, const VALUE_T *);
 
 static	int
-exec_array_get(JG_RESULT_T *, json_t *, json_t *, const VALUE_T *, int, const VALUE_T *, int, const VALUE_T *);
+exec_ary_get(JG_RESULT_T *, json_t *, json_t *, const VALUE_T *, int, const VALUE_T *, int, const VALUE_T *);
 
 static	int
 chk_json_type(const json_t *, int, int, int);
@@ -101,9 +101,9 @@ exec_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T 
 		vtab = vp_get->v_value.v_vtab;
 		vp = vtab->v_vtab[c_get];
 		if(vp->v_type == VT_OBJ){
-			exec_object_get(jg_result, js_root, js_get, vp_glist, c_glist, vp_get, c_get, vp);
+			exec_obj_get(jg_result, js_root, js_get, vp_glist, c_glist, vp_get, c_get, vp);
 		}else{
-			exec_array_get(jg_result, js_root, js_get, vp_glist, c_glist, vp_get, c_get, vp);
+			exec_ary_get(jg_result, js_root, js_get, vp_glist, c_glist, vp_get, c_get, vp);
 		}
 	}
 
@@ -111,7 +111,7 @@ exec_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T 
 }
 
 static	int
-exec_object_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T *vp_glist, int c_glist, const VALUE_T *vp_get, int c_get, const VALUE_T *vp_obj)
+exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T *vp_glist, int c_glist, const VALUE_T *vp_get, int c_get, const VALUE_T *vp_obj)
 {
 	const VTAB_T	*vtab;
 	int	i;
@@ -153,7 +153,7 @@ CLEAN_UP : ;
 }
 
 static	int
-exec_array_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T *vp_glist, int c_glist, const VALUE_T *vp_get, int c_get, const VALUE_T *vp_ary)
+exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T *vp_glist, int c_glist, const VALUE_T *vp_get, int c_get, const VALUE_T *vp_ary)
 {
 	size_t	s_ary;
 	const VTAB_T	*vtab;
@@ -184,23 +184,44 @@ exec_array_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const V
 			}
 		}
 		JG_result_array_pop(jg_result);
-	}else if(json_typeof(js_get) == JSON_OBJECT){	// Use for [*]
-		const char *key;
-		json_t *js_obj_value;
+	}else if(json_typeof(js_get) == JSON_OBJECT){	// Use for [*], [k1, ... ]
+		vtab = vp_ary->v_value.v_vtab;
+		if(vtab->v_vtab[0]->v_type == VT_STAR){	// [*]
+			const char *key;
 
-		s_ary = json_array_size(js_get);
-		JG_result_array_push(jg_result);
-		json_object_foreach(js_get, key, js_obj_value){
-			JG_result_array_init(jg_result);
-			if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-				jr_sprt_json_value(jg_result, js_obj_value);
-				if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
-					JG_result_print(jg_result);
+			JG_result_array_push(jg_result);
+			json_object_foreach(js_get, key, js_value){
+				JG_result_array_init(jg_result);
+				if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
+					jr_sprt_json_value(jg_result, js_value);
+					if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
+						JG_result_print(jg_result);
+					}
+				}else if(c_get + 1 < vp_get->v_value.v_vtab->vn_vtab)
+					exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
+			}
+			JG_result_array_pop(jg_result);
+		}else{	// [k, ...]
+			JG_result_array_push(jg_result);
+			for(i = 0; i < vtab->vn_vtab; i++){
+				int	is_primitive;
+
+				JG_result_array_init(jg_result);
+				vp = vtab->v_vtab[i];
+				js_value = json_object_get(js_get, vp->v_value.v_key);
+				if(js_value != NULL){
+					is_primitive = is_json_primitive(js_value);				
+					if(is_primitive | (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
+						jr_sprt_json_value(jg_result, js_value);
+					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
+						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
+				}else{
+					// TODO: how to handle missing keys? Ignore them?
+					LOG_ERROR("no such key %s", vp->v_value.v_key);
 				}
-			}else if(c_get + 1 < vp_get->v_value.v_vtab->vn_vtab)
-				exec_get(jg_result, js_root, js_obj_value, vp_glist, c_glist, vp_get, c_get + 1);
+			}
+			JG_result_array_pop(jg_result);
 		}
-		JG_result_array_pop(jg_result);
 	}else{
 		err = 1;
 		goto CLEAN_UP;
