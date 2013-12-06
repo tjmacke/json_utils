@@ -15,6 +15,7 @@
 typedef	struct	slice_t	{
 	int	s_low;
 	int	s_high;
+	int	s_incr;
 } SLICE_T;
 
 typedef	struct	value_t	{

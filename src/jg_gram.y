@@ -9,6 +9,7 @@
 %token	SYM_STAR
 %token	SYM_IDENT
 %token	SYM_INT
+%token	SYM_UINT
 %token	SYM_STRING
 %token	SYM_ERROR
 
@@ -44,9 +45,9 @@ idx_list	: idx
 		;
 idx		: elt
 		| elt SYM_COLON elt
-		| elt SYM_COLON elt SYM_COLON elt
+		| elt SYM_COLON elt SYM_COLON SYM_INT
 		;
 elt		: SYM_INT
 		| SYM_DOLLAR
-		| SYM_DOLLAR SYM_MINUS SYM_INT
+		| SYM_DOLLAR SYM_MINUS SYM_UINT
 		;

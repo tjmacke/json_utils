@@ -10,18 +10,19 @@
 #define	TOK_EOF		0
 #define	TOK_IDENT	1
 #define	TOK_INT		2
-#define	TOK_STRING	3
-#define	TOK_LCURLY	4
-#define	TOK_RCURLY	5
-#define	TOK_LBRACK	6
-#define	TOK_RBRACK	7
-#define	TOK_COMMA	8
-#define	TOK_COLON	9
-#define	TOK_DOLLAR	10
-#define	TOK_MINUS	11
-#define	TOK_STAR	12
-#define	TOK_LIST	13
-#define	TOK_ERROR	14
+#define	TOK_UINT	3
+#define	TOK_STRING	4
+#define	TOK_LCURLY	5
+#define	TOK_RCURLY	6
+#define	TOK_LBRACK	7
+#define	TOK_RBRACK	8
+#define	TOK_COMMA	9
+#define	TOK_COLON	10
+#define	TOK_DOLLAR	11
+#define	TOK_MINUS	12
+#define	TOK_STAR	13
+#define	TOK_LIST	14
+#define	TOK_ERROR	15
 
 typedef	struct	token_t	{
 	int	t_tok;
@@ -515,6 +516,22 @@ ary_index(const char **sp, TOKEN_T *tp, NODE_T **np, SLICE_T *slp)
 			goto CLEAN_UP;
 		}
 		slp->s_high = ival;
+		if(tp->t_tok == TOK_COLON){
+			token_get(sp, tp);
+			if(tp->t_tok == TOK_INT || tp->t_tok == TOK_UINT){
+				ival = atoi(tp->t_text);
+				if(ival == 0){
+					LOG_ERROR("slice increment can not be 0");
+					err = 1; 
+					goto CLEAN_UP;
+				}
+				slp->s_incr = ival;
+				token_get(sp, tp);
+			}else{
+				err = 1;
+				goto CLEAN_UP;
+			}
+		}
 	}
 
 CLEAN_UP : ;
@@ -529,7 +546,7 @@ ary_elt(const char **sp, TOKEN_T *tp, int *ival)
 
 	*ival = 0;
 
-	if(tp->t_tok == TOK_INT){
+	if(tp->t_tok == TOK_INT || tp->t_tok == TOK_UINT){
 		if((*ival = atoi(tp->t_text)) <= 0){
 			LOG_ERROR("bad array index %d, must be > 0", *ival);
 			err = 1;
@@ -540,7 +557,7 @@ ary_elt(const char **sp, TOKEN_T *tp, int *ival)
 		token_get(sp, tp);
 		if(tp->t_tok == TOK_MINUS){
 			token_get(sp, tp);
-			if(tp->t_tok != TOK_INT){
+			if(tp->t_tok != TOK_UINT){
 				err = 1;
 				goto CLEAN_UP;
 			}else{
@@ -624,10 +641,19 @@ token_get(const char **str, TOKEN_T *tp)
 		if(tp->t_text != NULL)
 			free(tp->t_text);
 		tp->t_text  = strndup(t_start, t_end - t_start);
-	}else if(isdigit(*t_start)){
-		tp->t_tok = TOK_INT;
-		for(t_end = t_start + 1; isdigit(*t_end); t_end++)
-			;
+	}else if(*t_start == '-' || isdigit(*t_start)){
+		if(*t_start == '-'){
+			if(!isdigit(t_start[1])){
+				tp->t_tok = TOK_MINUS;
+				t_end = t_start + 1;
+			}else
+				tp->t_tok = TOK_INT;
+		}else
+			tp->t_tok = TOK_UINT;
+		if(tp->t_tok != TOK_MINUS){
+			for(t_end = t_start + 1; isdigit(*t_end); t_end++)
+				;
+		}
 		if(tp->t_text != NULL)
 			free(tp->t_text);
 		tp->t_text  = strndup(t_start, t_end - t_start);
@@ -844,6 +870,7 @@ value_new(int type, const SLICE_T *sp, const char *str, NODE_T *nodes)
 	if(type == VT_SLICE){
 		vp->v_value.v_slice.s_low = sp->s_low;
 		vp->v_value.v_slice.s_high = sp->s_high;
+		vp->v_value.v_slice.s_incr = sp->s_incr;
 	}else if(type == VT_KEY){
 		vp->v_value.v_key = strdup(str);
 		if(vp->v_value.v_key == NULL){
@@ -955,6 +982,8 @@ JG_value_dump(FILE *fp, const VALUE_T *vp, int ilev)
 			else
 				fprintf(fp, "%d", vp->v_value.v_slice.s_high);
 			fprintf(fp, "\n");
+			mk_indent(fp, ilev);
+			fprintf(fp, "  incr = %d (0 means set at runtime)\n", vp->v_value.v_slice.s_incr);
 		}else if(vp->v_type == VT_KEY || vp->v_type == VT_STAR){
 			mk_indent(fp, ilev);
 			fprintf(fp, "  key  = %p, %s\n", vp->v_value.v_key, vp->v_value.v_key ? vp->v_value.v_key : "NULL");
