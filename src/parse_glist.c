@@ -405,7 +405,13 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 
 	*np = NULL;
 
-	if(tp->t_tok == TOK_STAR){
+	if(tp->t_tok == TOK_IDENT || tp->t_tok == TOK_STRING){
+		if(key_list(sp, tp, &np_first)){
+			LOG_ERROR("key_list failed");
+			err = 1;
+			goto CLEAN_UP;
+		}
+	}else if(tp->t_tok == TOK_STAR){
 		vp = value_new(VT_STAR, NULL, tp->t_text, NULL);
 		if(vp == NULL){
 			LOG_ERROR("value_new failed for key %s", tp->t_text);
