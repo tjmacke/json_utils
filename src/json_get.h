@@ -13,8 +13,8 @@
 #define	ND_INDENT	2	// 2 spaces for each indent leven for node_dump()
 
 typedef	struct	slice_t	{
-	int	s_low;
-	int	s_high;
+	int	s_begin;
+	int	s_end;
 	int	s_incr;
 } SLICE_T;
 

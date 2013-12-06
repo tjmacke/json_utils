@@ -31,8 +31,11 @@ is_json_primitive(const json_t *);
 static	int
 jr_sprt_json_value(JG_RESULT_T *, const json_t *);
 
-static	void
-slice_to_indexes(const SLICE_T *, size_t, int *, int *);
+static	int
+slice_to_indexes(const SLICE_T *, size_t, int *, int *, int *);
+
+static	int
+slice_more(int, int, int);
 
 int
 JG_exec_glist(FILE *fp, json_t *js_root, const VALUE_T *vp_glist, int n_arys)
@@ -159,7 +162,7 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 	const VTAB_T	*vtab;
 	int	i;
 	const VALUE_T	*vp;
-	int	s, s_low, s_high;
+	int	s, s_begin, s_end, s_incr;
 	json_t	*js_value = NULL;
 	int	err = 0;
 
@@ -170,17 +173,21 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 		for(i = 0; i < vtab->vn_vtab; i++){
 			vp = vtab->v_vtab[i];
 			// vp is a slice, so need to loop over the slice bounds
-			slice_to_indexes(&vp->v_value.v_slice, s_ary, &s_low, &s_high);
-			for(s = s_low; s <= s_high; s++){
-				JG_result_array_init(jg_result);
-				js_value = json_array_get(js_get, s - 1);
-				if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-					jr_sprt_json_value(jg_result, js_value);
-					if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
-						JG_result_print(jg_result);
-					}
-				}else if(c_get + 1 < vp_get->v_value.v_vtab->vn_vtab)
-					exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
+			if(!slice_to_indexes(&vp->v_value.v_slice, s_ary, &s_begin, &s_end, &s_incr)){
+				for(s = s_begin; slice_more(s, s_end, s_incr); s += s_incr){
+					JG_result_array_init(jg_result);
+					js_value = json_array_get(js_get, s - 1);
+					if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
+						jr_sprt_json_value(jg_result, js_value);
+						if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
+							JG_result_print(jg_result);
+						}
+					}else if(c_get + 1 < vp_get->v_value.v_vtab->vn_vtab)
+						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
+				}
+			}else{
+				// TODO: how to handle bad slices? Skip?
+				LOG_ERROR("bad slice [%d:%d:%d]", vp->v_value.v_slice.s_begin, vp->v_value.v_slice.s_end, vp->v_value.v_slice.s_incr);
 			}
 		}
 		JG_result_array_pop(jg_result);
@@ -315,28 +322,65 @@ CLEAN_UP : ;
 	return err;
 }
 
-static	void
-slice_to_indexes(const SLICE_T *slp, size_t s_ary, int *low, int *high)
+static	int
+slice_to_indexes(const SLICE_T *slp, size_t s_ary, int *begin, int *end, int *incr)
 {
 	int	idx, off;
+	int	err = 0;
 
-	if(slp->s_low > 0)
-		*low = slp->s_low < s_ary ? slp->s_low : s_ary;
-	else if(slp->s_low == 0)
-		*low = s_ary;
-	else{
-		off = -slp->s_low;
-		*low = off >= s_ary ? 1 : s_ary - off;
+	*begin = slp->s_begin > 0 ? slp->s_begin : s_ary + slp->s_begin;
+	*end = slp->s_end > 0 ? slp->s_end : s_ary + slp->s_end;
+
+	// case 1: single value, must be in range as is
+	if(*begin == *end){
+		if(*begin < 1 || *begin > s_ary){
+			LOG_ERROR("index %d is not in [1:%ld]", *begin, s_ary);
+			err = 1;
+			goto CLEAN_UP;
+		}
+	}else if(*begin < *end){
+		if(*end < 1 || *begin > s_ary){
+			LOG_ERROR("index slice %d:%d is not in [1:%ld]", *begin, *end, s_ary);
+			err = 1;
+			goto CLEAN_UP;
+		}
+		*begin = *begin < 1 ? 1 : *begin;
+		*end = *end > s_ary ? s_ary : *end;
+	}else{
+		if(*begin > s_ary || *end < 1){
+			LOG_ERROR("index slice %d:%d is not in [%ld:1]", *begin, *end, s_ary);
+			err = 1;
+			goto CLEAN_UP;
+		}
+		*begin = *begin > s_ary ? s_ary : *begin;
+		*end = *end < 1 ? 1 : *end;
 	}
 
-	if(slp->s_high > 0)
-		*high = slp->s_high < s_ary ? slp->s_high : s_ary;
-	else if(slp->s_high == 0)
-		*high = s_ary;
-	else{
-		off = -slp->s_high;
-		*high = off >= s_ary ? 1 : s_ary - off;
+	if(slp->s_incr == 0){
+		*incr = *begin <= *end ? 1 : -1;
+	}else{
+		if(*begin <= *end){
+			if(slp->s_incr < 0){
+				LOG_ERROR("can't use incr %d with index slice %d:%d", slp->s_incr, *begin, *end);
+				err = 1;
+				goto CLEAN_UP;
+			}
+		}else if(slp->s_incr > 0){
+			LOG_ERROR("can't use incr %d with index slice %d:%d", slp->s_incr, *begin, *end);
+			err = 1;
+			goto CLEAN_UP;
+		}
+		*incr = slp->s_incr;
 	}
 
-	// TODO: *low > *high
+CLEAN_UP : ;
+
+	return err;
+}
+
+static	int
+slice_more(int s, int s_end, int s_incr)
+{
+
+	return s_incr > 0 ? s <= s_end : s >= s_end;
 }

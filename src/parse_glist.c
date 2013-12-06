@@ -435,13 +435,13 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 		}
 		vp = value_new(VT_SLICE, &slice, NULL, NULL);
 		if(vp == NULL){
-			LOG_ERROR("value_new failed for slice %d:%d", slice.s_low, slice.s_high);
+			LOG_ERROR("value_new failed for slice %d:%d", slice.s_begin, slice.s_end);
 			err = 1;
 			goto CLEAN_UP;
 		}
 		np_first = node_new(TOK_LBRACK, vp);
 		if(np_first == NULL){
-			LOG_ERROR("node_new failed for slice %d:%d", slice.s_low, slice.s_high);
+			LOG_ERROR("node_new failed for slice %d:%d", slice.s_begin, slice.s_end);
 			err = 1;
 			goto CLEAN_UP;
 		}
@@ -455,13 +455,13 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 			}
 			vp = value_new(VT_SLICE, &slice, NULL, NULL);
 			if(vp == NULL){
-				LOG_ERROR("value_new failed for slice %d:%d", slice.s_low, slice.s_high);
+				LOG_ERROR("value_new failed for slice %d:%d", slice.s_begin, slice.s_end);
 				err = 1;
 				goto CLEAN_UP;
 			}
 			np_next = node_new(TOK_LBRACK, vp);
 			if(np_next == NULL){
-				LOG_ERROR("node_new failed for slice %d:%d", slice.s_low, slice.s_high);
+				LOG_ERROR("node_new failed for slice %d:%d", slice.s_begin, slice.s_end);
 				err = 1;
 				goto CLEAN_UP;
 			}
@@ -508,14 +508,14 @@ ary_index(const char **sp, TOKEN_T *tp, NODE_T **np, SLICE_T *slp)
 		err = 1;
 		goto CLEAN_UP;
 	}
-	slp->s_low = slp->s_high = ival;
+	slp->s_begin = slp->s_end = ival;
 	if(tp->t_tok == TOK_COLON){
 		token_get(sp, tp);
 		if(ary_elt(sp, tp, &ival)){
 			err = 1;
 			goto CLEAN_UP;
 		}
-		slp->s_high = ival;
+		slp->s_end = ival;
 		if(tp->t_tok == TOK_COLON){
 			token_get(sp, tp);
 			if(tp->t_tok == TOK_INT || tp->t_tok == TOK_UINT){
@@ -868,8 +868,8 @@ value_new(int type, const SLICE_T *sp, const char *str, NODE_T *nodes)
 	}
 	vp->v_type = type;
 	if(type == VT_SLICE){
-		vp->v_value.v_slice.s_low = sp->s_low;
-		vp->v_value.v_slice.s_high = sp->s_high;
+		vp->v_value.v_slice.s_begin = sp->s_begin;
+		vp->v_value.v_slice.s_end = sp->s_end;
 		vp->v_value.v_slice.s_incr = sp->s_incr;
 	}else if(type == VT_KEY){
 		vp->v_value.v_key = strdup(str);
@@ -966,21 +966,21 @@ JG_value_dump(FILE *fp, const VALUE_T *vp, int ilev)
 		if(vp->v_type == VT_SLICE){
 			mk_indent(fp, ilev);
 			fprintf(fp, "  low  = ");
-			if(vp->v_value.v_slice.s_low < 0)
-				fprintf(fp, "$%d", vp->v_value.v_slice.s_low);
-			else if(vp->v_value.v_slice.s_low == 0)
+			if(vp->v_value.v_slice.s_begin < 0)
+				fprintf(fp, "$%d", vp->v_value.v_slice.s_begin);
+			else if(vp->v_value.v_slice.s_begin == 0)
 				fprintf(fp, "$");
 			else
-				fprintf(fp, "%d", vp->v_value.v_slice.s_low);
+				fprintf(fp, "%d", vp->v_value.v_slice.s_begin);
 			fprintf(fp, "\n");
 			mk_indent(fp, ilev);
 			fprintf(fp, "  high = ");
-			if(vp->v_value.v_slice.s_high < 0)
-				fprintf(fp, "$%d", vp->v_value.v_slice.s_high);
-			else if(vp->v_value.v_slice.s_high == 0)
+			if(vp->v_value.v_slice.s_end < 0)
+				fprintf(fp, "$%d", vp->v_value.v_slice.s_end);
+			else if(vp->v_value.v_slice.s_end == 0)
 				fprintf(fp, "$");
 			else
-				fprintf(fp, "%d", vp->v_value.v_slice.s_high);
+				fprintf(fp, "%d", vp->v_value.v_slice.s_end);
 			fprintf(fp, "\n");
 			mk_indent(fp, ilev);
 			fprintf(fp, "  incr = %d (0 means set at runtime)\n", vp->v_value.v_slice.s_incr);
