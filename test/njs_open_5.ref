@@ -1,0 +1,100 @@
+1	6503	events: don't call once twice
+1	6502	WIP events: add execution hooks
+0	6501	doc: document that `process.send` is synchronous
+1	6497	build: Simplify the logic in vcbuild.bat
+0	6496	doc: document `process.env` better
+0	6493	Aborted unbinded ClientRequests stays on Agent queue and close sockets
+0	6490	unclear errors when reading big files using fs.readFile
+0	6488	Calling listen() on a busy port while using cluster produces EADDRINUSE after port clears
+2	6486	Keepalive socket on `freeSockets` link was hang 
+3	6484	domain: does not catch emitted errors when error listener exists, contrary to documentation
+5	6483	src: stop using v8::Isolate::GetCurrent()
+3	6478	Update path.js
+0	6477	crypto: XTS mode ciphers
+4	6473	Child process hanging
+0	6472	test-http-pipeline-flood.js is somewhat broken in v0.8
+3	6471	process: document the "exit" event
+0	6470	assert: respect assert.doesNotThrow message.
+1	6462	Include optional HOME path for group policies
+1	6460	debugger: fix unhandled error in setBreakpoint
+7	6455	added --enable-shared support for building libnode.so
+1	6453	debugger: TypeError: Cannot call method 'replace' of undefined
+4	6451	v0.11.8 TypeError: Property 'onIncoming' of object #<HTTPParser> is not a function
+0	6450	async-wrap: additional implementation details
+1	6449	Adding Node.js Security Announcements mailing list to community page
+0	6448	you should link to the nodejs-sec mailing list from http://nodejs.org/community (via @literatesavant)
+8	6442	Add support for concatenated gzip files.
+3	6440	test-debug-signal-cluster.js failing sporadically
+3	6439	Compilation of v0.11.8 fails on Solaris 10 and some Illumos distros due to missing libproc.h
+10	6438	writestream should fsync(2) before close(2)
+0	6435	TypeError: uid must be an unsigned int
+4	6434	#3977 Node.js crash on Windows when no read permissions for the root
+1	6424	process.env doc insufficient
+2	6423	streamwrap: chainable callbacks
+1	6421	stream: End writables before emitting 'end' event
+3	6415	readline with multi-line question (\n) repeats whole question on backspace/delete
+9	6414	core: expose gc statistics
+9	6412	core: add v8 cpu / heap profiler bindings
+7	6408	vm: OOM error when creating many contexts
+0	6403	Duplex Streams Bound to Underlying Streams
+0	6401	path.relative() not working with network shares
+0	6400	assert: doesNotThrow doesn't show message
+2	6393	util: format to not inspect strings if first argument is non-string
+6	6390	dns: c-ares soa binding
+7	6387	http: parse the status message in a http response.
+0	6385	Eleven test failures on Windows 7 x64 with VCExpress 2012 SP3 on v0.10.21
+0	6381	Should lstatSync return execute bit on directories for Windows?
+2	6380	src: enable fips support
+0	6377	unbuildable on diskstation DS211+, need ARM patch ?
+10	6376	crypto: `randomBytes` is non-blocking
+6	6372	Crypto randomBytes and pseudoRandomBytes
+3	6371	build: add i18n build option
+2	6370	gyp: allow pass v8 gyp variables to configure
+30	6368	Add support for toggling debug mode and accessor function for debug mode status flag.
+3	6367	crypto: Advanced test case for spkac functions
+5	6365	process: document kill(0), disallow kill(O_RDWR)
+2	6361	doc: stream.Readable 'error' event should have argument
+5	6360	File ReadableStream#unshift triggers readable immediately
+6	6358	obtrusive "domain" property on emitter objects
+4	6353	add "reasonPhrase" or "statusMessage" property to http.ServerResponse
+3	6351	Clarified HTTP client callback handling
+2	6344	NTFS Alterantive Data Stream Listing and Deleting
+7	6332	build: install node and static library headers
+1	6328	Add path.common(path1/*, ...pathn*/);
+1	6323	smalloc: track active number/size of smallocs
+4	6317	node_crypto: Add support for AES-GCM modes
+9	6316	src: emit 'beforeExit' event on process object
+7	6315	'--with-mips-float-abi' doesn't configures the float ABI for node.js
+1	6314	Add the escapeShellArg function to child_process
+1	6305	http response pause lets event loop exit when there's an actively ref'd connection
+1	6300	http client should emit error on content length mismatch
+7	6295	0.11.3 and up break connect.compress middleware
+10	6294	Added Visual Studio 2013 support to node
+0	6291	Submodule documentation should include page navigation
+12	6290	nextTick — specifc context
+1	6289	Use of network interface name in Node.js socket programming
+2	6285	timers: non-deterministic run order with small values
+0	6284	feature request: split objectMode into readableObjectMode and writableObjectMode
+0	6276	events: EventEmitter#listeners should return the user supplied functions
+3	6271	child_process.fork() and read from parent process.stdin causes 100% CPU usage
+2	6260	problems executing node script by unc path [windows]
+1	6255	node console autocomplete suggestion
+2	6252	My v0.13 performance enhancements list
+7	6249	process.stdout and process.stderr get flushed out-of-order in Windows when piped
+0	6247	child_process.spawn on windows doesn't always send all data through stdio
+5	6228	vm: revert contextify/vm2 patches
+6	6227	Http agent doesn't close sockets if stream is piped and destination is closed before end is reached (causes maxSockets to be reached)
+0	6220	inconsistency: should or shouldn't streams destroy consumers when closed?
+0	6216	[process.argv] node debug script VERSUS node script
+0	6212	RFC Events Core events vs. Userspace Events (wrt event propagation)
+0	6211	Connection.pipe raises ECONNRESET on afterWrite
+1	6203	forked processes ends socket connection if the child takes too long to load
+0	6196	feature request: implementable Stream.Readable#_destroy() method
+0	6195	feature request: public Stream.Readable#dump() method
+0	6193	child_process do not communicate  with spawn properly.
+0	6189	child_process.exec() omit Error object when maxBuffer is reached
+0	6187	cli or http: client 'aborted' event or --eval regression
+1	6185	DELETE client request should not send transfer-encoding: chunked
+0	6176	Memory leak when loop  require(file); delete require.cache[file];  
+0	6175	process.stdin evaluation results in non-blocking stdout reads
+1	6171	http: every request needs an agent

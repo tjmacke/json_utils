@@ -1,0 +1,54 @@
+{
+  "comments":1,
+  "url":"https://api.github.com/repos/joyent/node/issues/6503",
+  "comments_url":"https://api.github.com/repos/joyent/node/issues/6503/comments",
+  "state":"open",
+  "events_url":"https://api.github.com/repos/joyent/node/issues/6503/events",
+  "number":6503,
+  "labels_url":"https://api.github.com/repos/joyent/node/issues/6503/labels{/name}",
+  "assignee":null,
+  "body":"Emitting an event within a `EventEmitter#once` callback of the same event name will cause subsequent `EventEmitter#once` listeners of the same name to be called multiple times.\r\n\r\n```js\r\nvar events = require('events');\r\nvar emitter = new events.EventEmitter();\r\n\r\nemitter.once('e', function () {\r\n\temitter.emit('e');\r\n\tconsole.log(1);\r\n});\r\n\r\nemitter.once('e', function () {\r\n\tconsole.log(2);\r\n});\r\n\r\nemitter.emit('e');\r\n\r\n// Output\r\n// 2\r\n// 1\r\n// 2\r\n```\r\n\r\nThis fixes the issue, only calling the listener method if it was not already called.\r\n\r\nA real world example of this happening is at https://github.com/yeoman/generator/pull/402.",
+  "milestone":null,
+  "html_url":"https://github.com/joyent/node/pull/6503",
+  "id":22547439,
+  "labels":[
+    {
+      "url":"https://api.github.com/repos/joyent/node/labels/pr",
+      "name":"pr",
+      "color":"006b75"
+    },
+    {
+      "url":"https://api.github.com/repos/joyent/node/labels/v0.10",
+      "name":"v0.10",
+      "color":"207de5"
+    }
+  ],
+  "title":"events: don't call once twice",
+  "pull_request":{
+    "html_url":"https://github.com/joyent/node/pull/6503",
+    "patch_url":"https://github.com/joyent/node/pull/6503.patch",
+    "diff_url":"https://github.com/joyent/node/pull/6503.diff"
+  },
+  "created_at":"2013-11-12T20:23:13Z",
+  "user":{
+    "login":"timrwood",
+    "gravatar_id":"a511064517dfdf9ab9153843437ed2ff",
+    "url":"https://api.github.com/users/timrwood",
+    "following_url":"https://api.github.com/users/timrwood/following{/other_user}",
+    "followers_url":"https://api.github.com/users/timrwood/followers",
+    "site_admin":false,
+    "avatar_url":"https://2.gravatar.com/avatar/a511064517dfdf9ab9153843437ed2ff?d=https%3A%2F%2Fidenticons.github.com%2F5870badd8b99bcaa4cae5db982163a33.png&r=x",
+    "repos_url":"https://api.github.com/users/timrwood/repos",
+    "subscriptions_url":"https://api.github.com/users/timrwood/subscriptions",
+    "id":643885,
+    "received_events_url":"https://api.github.com/users/timrwood/received_events",
+    "html_url":"https://github.com/timrwood",
+    "gists_url":"https://api.github.com/users/timrwood/gists{/gist_id}",
+    "starred_url":"https://api.github.com/users/timrwood/starred{/owner}{/repo}",
+    "organizations_url":"https://api.github.com/users/timrwood/orgs",
+    "events_url":"https://api.github.com/users/timrwood/events{/privacy}",
+    "type":"User"
+  },
+  "updated_at":"2013-11-12T21:58:36Z",
+  "closed_at":null
+}
