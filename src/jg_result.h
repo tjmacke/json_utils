@@ -14,6 +14,7 @@ typedef	struct	buf_t	{
 
 typedef	struct	jg_result_t	{
 	FILE	*j_fp;
+	pthread_mutex_t	*j_fp_mutex;
 	int	j_first;
 	BUF_T	*j_bufs;
 	int	jn_bufs;
@@ -25,7 +26,7 @@ extern "C" {
 #endif
 
 JG_RESULT_T	*
-JG_result_new(FILE *, int);
+JG_result_new(FILE *, pthread_mutex_t *, int);
 
 void
 JG_result_delete(JG_RESULT_T *);

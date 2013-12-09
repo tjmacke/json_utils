@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include <jansson.h>
 
@@ -14,7 +15,7 @@ extern "C" {
 #endif
 
 int
-JG_exec_glist(FILE *, json_t *, const VALUE_T *, int);
+JG_exec_glist(FILE *, pthread_mutex_t *, json_t *, const VALUE_T *, int);
 
 #ifdef	__cplusplus
 }

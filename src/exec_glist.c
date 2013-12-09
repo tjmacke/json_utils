@@ -38,7 +38,7 @@ static	int
 slice_more(int, int, int);
 
 int
-JG_exec_glist(FILE *fp, json_t *js_root, const VALUE_T *vp_glist, int n_arys)
+JG_exec_glist(FILE *fp, pthread_mutex_t *fp_mutex, json_t *js_root, const VALUE_T *vp_glist, int n_arys)
 {
 	JG_RESULT_T	*jg_result = NULL;
 	const VTAB_T	*vtab;
@@ -60,7 +60,7 @@ JG_exec_glist(FILE *fp, json_t *js_root, const VALUE_T *vp_glist, int n_arys)
 		goto CLEAN_UP;
 	}
 
-	jg_result = JG_result_new(fp, n_arys);
+	jg_result = JG_result_new(fp, fp_mutex, n_arys);
 	if(jg_result == NULL){
 		LOG_ERROR("JG_result_new() failed");
 		err = 1;

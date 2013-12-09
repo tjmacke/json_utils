@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "log.h"
 #include "jg_result.h"
@@ -16,7 +17,7 @@ tsv_strcpy(char *, const char *);
 
 
 JG_RESULT_T	*
-JG_result_new(FILE *fp, int n_arys)
+JG_result_new(FILE *fp, pthread_mutex_t *fp_mutex, int n_arys)
 {
 	JG_RESULT_T	*jgr = NULL;
 	int	i;
@@ -28,6 +29,7 @@ JG_result_new(FILE *fp, int n_arys)
 		goto CLEAN_UP;
 	}
 	jgr->j_fp = fp;
+	jgr->j_fp_mutex = fp_mutex;
 	jgr->j_first = 1;
 	jgr->j_bufs = (BUF_T *)calloc((size_t)(n_arys + 1), sizeof(BUF_T));
 	if(jgr->j_bufs == NULL){
@@ -188,9 +190,11 @@ JG_result_print(const JG_RESULT_T *jgr)
 	int	i;
 	int	err = 0;
 
+	pthread_mutex_lock(jgr->j_fp_mutex);
 	for(i = 0; i < jgr->jn_bufs; i++)
 		fputs(jgr->j_bufs[i].b_buf, jgr->j_fp);
 	fputc('\n', jgr->j_fp);
+	pthread_mutex_unlock(jgr->j_fp_mutex);
 
 	return err;
 }
