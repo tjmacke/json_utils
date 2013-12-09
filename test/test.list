@@ -1,0 +1,39 @@
+earthporn_1	'{data}{children}[1]'	earthporn.json
+earthporn_2	'{data}{children}[1]'	earthporn.json	| $BINDIR/json_fmt
+earthporn_3	'{data}{children}[1]{data}'	earthporn.json
+earthporn_4	'{data}{children}[1]{data}'	earthporn.json	| $BINDIR/json_fmt
+earthporn_5	'{data}{children}[1]{data}{id, title}'	earthporn.json
+earthporn_6	'{data}{children}[1:$]{data}{id, title}'	earthporn.json
+earthporn_7	'{data}{children}[1:$:2]{data}{id, title}'	earthporn.json
+earthporn_8	'{data}{children}[$:1]{data}{id, title}'	earthporn.json
+earthporn_9	'{data}{children}[$:1:-2]{data}{id, title}'	earthporn.json
+
+ifconfig	'{ip_addr}'	ifconfig.json
+
+music_1	'{dataset}[1]'	music.json
+music_2	'{dataset}[1]'	music.json	| $BINDIR/json_fmt
+music_3	'{dataset}[1]{album_title}'	music.json
+music_4	'{dataset}[1:$]{album_title}'	music.json
+music_5	'{dataset}[1:$]{album_id, album_title}'	music.json
+
+njs_open_1	'[1]'	njs_open.json
+njs_open_2	'[1]'	njs_open.json	| $BINDIR/json_fmt
+njs_open_3	'[1]{comments, number, title}'	njs_open.json
+njs_open_4	'[1:3]{comments, number, title}'	njs_open.json
+njs_open_5	'[1:$]{comments, number, title}'	njs_open.json
+njs_open_6	'[1:$]{comments, number, title}'	njs_open.json	| sort -n | tail -5
+
+njs_proj	'{open_issues}'	njs_proj.json
+
+njs_search_1	'{repositories}[1]'	njs_search.json
+njs_search_2	'{repositories}[1]'	njs_search.json	| $BINDIR/json_fmt
+njs_search_3	'{repositories}[3]{name}'	njs_search.json
+njs_search_4	'{repositories}[1:3]{name}'	njs_search.json
+
+periodic_table_1	'[*]'	periodic_table.json
+periodic_table_2	'[*]{AtNo, Name}'	periodic_table.json
+periodic_table_3	'[*]{AtNo, Name}'	periodic_table.json	| sort -k 1n,1 | head
+periodic_table_4	'[C, H, O, N]'	periodic_table.json
+periodic_table_5	'[C, H, O, N]{AtNo, Name}'	periodic_table.json
+periodic_table_6	'[Fe]'	periodic_table.json
+periodic_table_7	'[Fe]{AtNo, Name}'	periodic_table.json
