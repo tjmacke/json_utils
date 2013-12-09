@@ -1,4 +1,10 @@
-Yet another code that extracts data from json blobs.
+What: Yet another code that extracts data from json blobs.
+
+NB: This code uses the jansson json library which can download from
+
+	http://www.digip.org/jansson/
+
+Why.
 
 This code has its origin in a job interview that I failed.  My interviewer asked me
 to extract certain values from a "json" log file.  I use the quotes here because the
@@ -9,10 +15,11 @@ it directly using awk (!) string functions, etc.  After my alloted hour I was "c
 but no cigar" and as a result I didn't get the job.
 
 A year later, I wanted to use some public yelp data to test a ML I was developing and
-had to revisit the "crack lines of json" problem to access the data.  By this time I
-actually had some experience with json and since I work mostly with C/C++ person, I
-chose the jansson package to provide json support.  I quickly coded up the required
-programs to extract the data send it to my ML which performed very well.
+since the data was lines of json, I had to revisit the "crack lines of json" problem
+to access the data.  By this time I actually had some experience with json and since
+I work mostly with C/C++ , I chose the jansson package to provide json support.  I
+quickly coded up the required programs to extract the data and send it to my ML (which
+performed very well).
 
 This should have been the end of the story, but those little json extracting programs
 reminded me of that failed interview and I wondered how hard it would be to write a
