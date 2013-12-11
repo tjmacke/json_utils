@@ -8,7 +8,7 @@ earthporn_7	'{data}{children}[1:$:2]{data}{id, title}'	earthporn.json
 earthporn_8	'{data}{children}[$:1]{data}{id, title}'	earthporn.json
 earthporn_9	'{data}{children}[$:1:-2]{data}{id, title}'	earthporn.json
 
-ifconfig	'{ip_addr}'	ifconfig.json
+rest_response	'{ip_addr}'	rest_response.json
 
 music_1	'{dataset}[1]'	music.json
 music_2	'{dataset}[1]'	music.json	| $BINDIR/json_fmt

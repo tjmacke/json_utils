@@ -10,7 +10,7 @@ This code has its origin in a job interview that I failed.  My interviewer asked
 to extract certain values from a "json" log file.  I use the quotes here because the
 file itself was not json, but each line was a json object.  These objects all had the
 same rather simple structure (two levels of object nesting, no arrays, etc).  I, of
-course, knew what json was but had never worked with it.  So I figure I'll just crack
+course, knew what json was but had never worked with it.  So I figured I'd just crack
 it directly using awk (!) string functions, etc.  After my alloted hour I was "close
 but no cigar" and as a result I didn't get the job.
 
