@@ -10,6 +10,8 @@
 #include "parse_glist.h"
 #include "exec_glist.h"
 
+static	int	EG_verbose;
+
 static	int
 exec_glist(JG_RESULT_T *, json_t *, const VALUE_T *, int);
 
@@ -38,7 +40,7 @@ static	int
 slice_more(int, int, int);
 
 int
-JG_exec_glist(FILE *fp, pthread_mutex_t *fp_mutex, json_t *js_root, const VALUE_T *vp_glist, int n_arys)
+JG_exec_glist(FILE *fp, pthread_mutex_t *fp_mutex, int verbose, json_t *js_root, const VALUE_T *vp_glist, int n_arys)
 {
 	JG_RESULT_T	*jg_result = NULL;
 	const VTAB_T	*vtab;
@@ -59,6 +61,8 @@ JG_exec_glist(FILE *fp, pthread_mutex_t *fp_mutex, json_t *js_root, const VALUE_
 		err = 1;
 		goto CLEAN_UP;
 	}
+
+	EG_verbose = verbose;
 
 	jg_result = JG_result_new(fp, fp_mutex, n_arys);
 	if(jg_result == NULL){
@@ -139,8 +143,9 @@ exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALU
 			if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
 				exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 		}else{ 
-			// TODO: how to handle missing keys? I'm thinking ignore them
-			LOG_ERROR("no such key %s", vp->v_value.v_key);
+			if(EG_verbose)
+				LOG_WARN("no such key: %s", vp->v_value.v_key);
+			jr_sprt_json_value(jg_result, NULL);
 		}
 	}
 	if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
@@ -223,8 +228,9 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 					}else if(c_get + 1 < vp_get->v_value.v_vtab->vn_vtab)
 						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 				}else{
-					// TODO: how to handle missing keys? Ignore them?
-					LOG_ERROR("no such key %s", vp->v_value.v_key);
+					if(EG_verbose)
+						LOG_WARN("no such key: %s", vp->v_value.v_key);
+					jr_sprt_json_value(jg_result, NULL);
 				}
 			}
 			JG_result_array_pop(jg_result);
@@ -279,8 +285,12 @@ jr_sprt_json_value(JG_RESULT_T *jg_result, const json_t *js_value)
 	int	err = 0;
 
 	if(js_value == NULL){
+/*
 		LOG_ERROR("js_value is NULL");
 		err = 1;
+		goto CLEAN_UP;
+*/
+		JG_result_add(jg_result, NULL);
 		goto CLEAN_UP;
 	}
 

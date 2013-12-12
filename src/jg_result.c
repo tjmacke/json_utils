@@ -6,6 +6,9 @@
 #include "log.h"
 #include "jg_result.h"
 
+#define	JGR_BUF_SIZE	100000
+#define	JGR_MISSING	'\1'
+
 // These 2 functions handle strings w/tabs, newlines, makeing them safe to be fields in tsv files.
 // check for tab, newline and count each as 2 chars.
 static	size_t
@@ -38,13 +41,13 @@ JG_result_new(FILE *fp, pthread_mutex_t *fp_mutex, int n_arys)
 	}
 	jgr->jn_bufs = (n_arys + 1);
 	for(i = 0; i < jgr->jn_bufs; i++){
-		jgr->j_bufs[i].b_buf = (char *)malloc(S_BUF * sizeof(char));
+		jgr->j_bufs[i].b_buf = (char *)malloc(JGR_BUF_SIZE * sizeof(char));
 		if(jgr->j_bufs[i].b_buf == NULL){
 			err = 1;
 			goto CLEAN_UP;
 		}
 		*jgr->j_bufs[i].b_buf = '\0';
-		jgr->j_bufs[i].bs_buf = S_BUF;
+		jgr->j_bufs[i].bs_buf = JGR_BUF_SIZE;
 		jgr->j_bufs[i].bn_buf = 0;
 		jgr->j_bufs[i].b_bp = jgr->j_bufs[i].b_buf;
 	}
@@ -240,11 +243,9 @@ tsv_strlen(const char *str)
 	int	c;
 	size_t	l_str;
 
-	if(str == NULL){
-		// TODO: I think that I'm going to use a NULL src to indicate a missing element and return "\\0"
-		LOG_ERROR("str is NULL");
-		return 0;
-	}
+	// NULL is value of a missing element.  It will be replace in the output with Ctl-A ('\1')
+	if(str == NULL)
+		return 1;
 
 	for(l_str = 0, sp = str; *sp; sp++, l_str++){
 		c = *sp & 0xff;
@@ -286,9 +287,8 @@ tsv_strcpy(char *dst, const char *src)
 	if(dst == NULL){
 		LOG_ERROR("dst is NULL");
 		return NULL;
-	}else if(src == NULL){
-		// TODO: I think that I'm going to use a NULL src to indicate a missing element and return "\\0"
-		LOG_ERROR("src is NULL");
+	}else if(src == NULL){	// This is teh value of a missing element
+		*dst++ = JGR_MISSING;
 		*dst = '\0';
 		return dst;
 	}

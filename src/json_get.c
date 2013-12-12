@@ -101,7 +101,7 @@ main(int argc, char *argv[])
 		err = 1;
 		goto CLEAN_UP;
 	}
-	if(verbose){
+	if(verbose > 1){
 		fprintf(stderr, "glist = %s\n", glist);
 		JG_value_dump(stderr, vp_glist, 0);
 	}
@@ -142,7 +142,7 @@ main(int argc, char *argv[])
 			fputc('\n', stderr);
 		}
 
-		if(JG_exec_glist(ofp, &ofmutex, js_root, vp_glist, n_arys)){
+		if(JG_exec_glist(ofp, &ofmutex, verbose, js_root, vp_glist, n_arys)){
 			LOG_ERROR("%s: search failed", ifname);
 			err = 1;
 			goto CLEAN_UP;
@@ -222,7 +222,7 @@ worker(void *ptr)
 			}
 		}
 
-		if(JG_exec_glist(stdout, &ofmutex, js_root, vp_glist, n_arys)){
+		if(JG_exec_glist(stdout, &ofmutex, verbose, js_root, vp_glist, n_arys)){
 			LOG_WARN("%s:%d: search failed", ifname, l_if_lcnt);
 			err = 1;
 			goto NEXT;

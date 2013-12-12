@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 int
-JG_exec_glist(FILE *, pthread_mutex_t *, json_t *, const VALUE_T *, int);
+JG_exec_glist(FILE *, pthread_mutex_t *, int, json_t *, const VALUE_T *, int);
 
 #ifdef	__cplusplus
 }

@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 
-#define	S_BUF	100000
-
 typedef	struct	buf_t	{
 	char	*b_buf;
 	size_t	bs_buf;
