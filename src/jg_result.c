@@ -237,16 +237,41 @@ static	size_t
 tsv_strlen(const char *str)
 {
 	const char	*sp;
+	int	c;
 	size_t	l_str;
 
 	if(str == NULL){
+		// TODO: I think that I'm going to use a NULL src to indicate a missing element and return "\\0"
 		LOG_ERROR("str is NULL");
 		return 0;
 	}
 
 	for(l_str = 0, sp = str; *sp; sp++, l_str++){
-		if(*sp == '\t' || *sp == '\n')
-			l_str++;
+		c = *sp & 0xff;
+		if(c < 0x20){		// the C0 controls
+			switch(*sp){
+			case '\b' :
+			case '\f' :
+			case '\n' :
+			case '\r' :
+			case '\t' :
+				l_str++;
+				break;
+			default :
+				l_str += 5;	// -> \u%04x of *sp
+				break;
+			}
+		}else if(c == 0x7f){	// delete
+			l_str += 5;	// -> \u007f
+		}else if(c == 0xc2){	// check for C1 controls
+			int	c1;
+
+			c1 = sp[1] & 0xff;
+			if(c1 >= 0x80 && c1 <= 0x9f){
+				l_str += 5;	// -> \u0080 : \u009f
+				sp++;
+			}
+		}
 	}
 	return l_str;
 }
@@ -256,23 +281,60 @@ tsv_strcpy(char *dst, const char *src)
 {
 	char	*dp;
 	const char	*sp;
+	int	c;
 
 	if(dst == NULL){
 		LOG_ERROR("dst is NULL");
 		return NULL;
 	}else if(src == NULL){
+		// TODO: I think that I'm going to use a NULL src to indicate a missing element and return "\\0"
 		LOG_ERROR("src is NULL");
 		*dst = '\0';
 		return dst;
 	}
 
 	for(dp = dst, sp = src; *sp; sp++){
-		if(*sp == '\t'){
-			*dp++ = '\\';
-			*dp++ = 't';
-		}else if(*sp == '\n'){
-			*dp++ = '\\';
-			*dp++ = 'n';
+		c = *sp & 0xff;
+		if(c < 0x20){		// the C0 controls
+			switch(*sp){
+			case '\b' :
+				*dp++ = '\\';
+				*dp++ = 'b';
+				break;
+			case '\f' :
+				*dp++ = '\\';
+				*dp++ = 'f';
+				break;
+			case '\n' :
+				*dp++ = '\\';
+				*dp++ = 'n';
+				break;
+			case '\r' :
+				*dp++ = '\\';
+				*dp++ = 'r';
+				break;
+			case '\t' :
+				*dp++ = '\\';
+				*dp++ = 'r';
+				break;
+			default :
+				sprintf(dp, "\\u%04x", c);
+				dp += 6;
+				break;
+			}
+		}else if(c == 0x7f){	// delete
+			strcpy(dp, "\\u007f");
+			dp += 6;
+		}else if(c == 0xc2){	// check for C1 controls
+			int	c1;
+
+			c1 = sp[1] & 0xff;
+			if(c1 >= 0x80 && c1 <= 0x9f){	// Got one
+				sprintf(dp, "\\u%04x", c1);
+				dp += 6;
+				sp++;
+			}else
+				*dp++ = *sp;
 		}else
 			*dp++ = *sp;
 	}

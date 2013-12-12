@@ -28,6 +28,7 @@ sel		: obj_sel
 		| ary_sel
 		;
 obj_sel		: SYM_LCURLY key_list SYM_RCURLY
+		| SYM_LCURLY idx_list SYM_RCURLY
 		| SYM_LCURLY SYM_STAR SYM_RCURLY
 		;
 ary_sel		: SYM_LSQUARE idx_list SYM_RSQUARE
