@@ -25,9 +25,6 @@ static	int
 exec_ary_get(JG_RESULT_T *, json_t *, json_t *, const VALUE_T *, int, const VALUE_T *, int, const VALUE_T *);
 
 static	int
-chk_json_type(const json_t *, int, int, int);
-
-static	int
 is_json_primitive(const json_t *);
 
 static	int
@@ -127,32 +124,39 @@ exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALU
 	int	is_primitive;	// no internal structure: null, false, true, int, real, string
 	int	err = 0;
 
-	if(chk_json_type(js_get, JSON_OBJECT, c_glist, c_get)){
+	if(json_typeof(js_get) == JSON_OBJECT){
+		// TODO: add code to {*} 
+		vtab = vp_obj->v_value.v_vtab;
+		for(i = 0; i < vtab->vn_vtab; i++){
+			vp = vtab->v_vtab[i];
+			js_value = json_object_get(js_get, vp->v_value.v_key);
+			if(js_value != NULL){
+				is_primitive = is_json_primitive(js_value);
+				if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
+					jr_sprt_json_value(jg_result, js_value);
+				if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
+					exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
+			}else{ 
+				if(EG_verbose)
+					LOG_WARN("no such key: %s", vp->v_value.v_key);
+				jr_sprt_json_value(jg_result, NULL);
+			}
+		}
+		if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
+			if(c_glist + 1 < vp_glist->v_value.v_vtab->vn_vtab)
+				exec_glist(jg_result, js_root, vp_glist, c_glist + 1);
+			else
+				JG_result_print(jg_result);
+		}
+	/*
+	// TODO: add code to get index lists using object semantics
+	}else if(json_typeof(js_get) == JSON_ARRAY){
+	*/
+	}else{
+		LOG_ERROR("glist(%d, %d): js_get has type %d, expect object (%d)",
+			c_glist, c_get, json_typeof(js_get), JSON_OBJECT);
 		err = 1;
 		goto CLEAN_UP;
-	}
-
-	vtab = vp_obj->v_value.v_vtab;
-	for(i = 0; i < vtab->vn_vtab; i++){
-		vp = vtab->v_vtab[i];
-		js_value = json_object_get(js_get, vp->v_value.v_key);
-		if(js_value != NULL){
-			is_primitive = is_json_primitive(js_value);
-			if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
-				jr_sprt_json_value(jg_result, js_value);
-			if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
-				exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
-		}else{ 
-			if(EG_verbose)
-				LOG_WARN("no such key: %s", vp->v_value.v_key);
-			jr_sprt_json_value(jg_result, NULL);
-		}
-	}
-	if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-		if(c_glist + 1 < vp_glist->v_value.v_vtab->vn_vtab)
-			exec_glist(jg_result, js_root, vp_glist, c_glist + 1);
-		else
-			JG_result_print(jg_result);
 	}
 
 CLEAN_UP : ;
@@ -236,6 +240,8 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 			JG_result_array_pop(jg_result);
 		}
 	}else{
+		LOG_ERROR("glist(%d, %d): js_get has type %d, expect array (%d) or object (%d)",
+			c_glist, c_get, json_typeof(js_get), JSON_ARRAY, JSON_OBJECT);
 		err = 1;
 		goto CLEAN_UP;
 	}
@@ -243,26 +249,6 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 CLEAN_UP : ;
 
 	return err;
-}
-
-static	int
-chk_json_type(const json_t *js_ptr, int type, int c_glist, int c_get)
-{
-
-	if(js_ptr == NULL){
-		LOG_ERROR("glist(%d, %d): js_get is NULL", c_glist, c_get);
-		return 1;
-	}else{
-		int	jp_type;
-
-		jp_type = json_typeof(js_ptr);
-		if(jp_type != type){
-			LOG_ERROR("glist(%d, %d): js_get has type %d, expect array(%d)", c_glist, c_get, jp_type, type);
-			return 1;
-		}
-	}
-
-	return 0;
 }
 
 static	int
@@ -285,11 +271,6 @@ jr_sprt_json_value(JG_RESULT_T *jg_result, const json_t *js_value)
 	int	err = 0;
 
 	if(js_value == NULL){
-/*
-		LOG_ERROR("js_value is NULL");
-		err = 1;
-		goto CLEAN_UP;
-*/
 		JG_result_add(jg_result, NULL);
 		goto CLEAN_UP;
 	}
