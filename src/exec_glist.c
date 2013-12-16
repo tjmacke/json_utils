@@ -117,29 +117,48 @@ exec_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T 
 static	int
 exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALUE_T *vp_glist, int c_glist, const VALUE_T *vp_get, int c_get, const VALUE_T *vp_obj)
 {
+	size_t	s_ary;
 	const VTAB_T	*vtab;
 	int	i;
 	const VALUE_T	*vp;
+	int	s, s_begin, s_end, s_incr;
 	json_t	*js_value = NULL;
 	int	is_primitive;	// no internal structure: null, false, true, int, real, string
 	int	err = 0;
 
 	if(json_typeof(js_get) == JSON_OBJECT){
-		// TODO: add code to {*} 
 		vtab = vp_obj->v_value.v_vtab;
-		for(i = 0; i < vtab->vn_vtab; i++){
-			vp = vtab->v_vtab[i];
-			js_value = json_object_get(js_get, vp->v_value.v_key);
-			if(js_value != NULL){
-				is_primitive = is_json_primitive(js_value);
-				if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
-					jr_sprt_json_value(jg_result, js_value);
-				if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
-					exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
-			}else{ 
-				if(EG_verbose)
-					LOG_WARN("no such key: %s", vp->v_value.v_key);
-				jr_sprt_json_value(jg_result, NULL);
+		if(vtab->v_vtab[0]->v_type == VT_STAR){	// {*}
+			const char	*key;
+
+			json_object_foreach(js_get, key, js_value){
+				if(js_value != NULL){
+					is_primitive = is_json_primitive(js_value);
+					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
+						jr_sprt_json_value(jg_result, js_value);
+					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
+						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
+				}else{ 
+					if(EG_verbose)
+						LOG_WARN("no such key: %s", vp->v_value.v_key);
+					jr_sprt_json_value(jg_result, NULL);
+				}
+			}
+		}else{
+			for(i = 0; i < vtab->vn_vtab; i++){
+				vp = vtab->v_vtab[i];
+				js_value = json_object_get(js_get, vp->v_value.v_key);
+				if(js_value != NULL){
+					is_primitive = is_json_primitive(js_value);
+					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
+						jr_sprt_json_value(jg_result, js_value);
+					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
+						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
+				}else{ 
+					if(EG_verbose)
+						LOG_WARN("no such key: %s", vp->v_value.v_key);
+					jr_sprt_json_value(jg_result, NULL);
+				}
 			}
 		}
 		if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
@@ -203,7 +222,7 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 	}else if(json_typeof(js_get) == JSON_OBJECT){	// Use for [*], [k1, ... ]
 		vtab = vp_ary->v_value.v_vtab;
 		if(vtab->v_vtab[0]->v_type == VT_STAR){	// [*]
-			const char *key;
+			const char	*key;
 
 			JG_result_array_push(jg_result);
 			json_object_foreach(js_get, key, js_value){
