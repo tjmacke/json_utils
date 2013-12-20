@@ -16,13 +16,19 @@
 #define	TOK_RCURLY	6
 #define	TOK_LBRACK	7
 #define	TOK_RBRACK	8
-#define	TOK_COMMA	9
-#define	TOK_COLON	10
-#define	TOK_DOLLAR	11
-#define	TOK_MINUS	12
-#define	TOK_STAR	13
-#define	TOK_LIST	14
-#define	TOK_ERROR	15
+#define	TOK_LPAREN	9
+#define	TOK_RPAREN	10
+#define	TOK_COMMA	11
+#define	TOK_COLON	12
+#define	TOK_DOLLAR	13
+#define	TOK_MINUS	14
+#define	TOK_STAR	15
+#define	TOK_ATSIGN	16
+#define	TOK_EQUAL	17
+#define	TOK_SEMI	18
+#define	TOK_INDEX	19	// @index?  Use @ as the strop
+#define	TOK_LIST	20
+#define	TOK_ERROR	21
 
 typedef	struct	token_t	{
 	int	t_tok;
@@ -726,6 +732,12 @@ token_get(const char **str, TOKEN_T *tp)
 		case ']' :
 			tp->t_tok = TOK_RBRACK;
 			break;
+		case '(' :
+			tp->t_tok = TOK_LPAREN;
+			break;
+		case ')' :
+			tp->t_tok = TOK_RPAREN;
+			break;
 		case ',' :
 			tp->t_tok = TOK_COMMA;
 			break;
@@ -735,11 +747,17 @@ token_get(const char **str, TOKEN_T *tp)
 		case '$' :
 			tp->t_tok = TOK_DOLLAR;
 			break;
-		case '-' :
-			tp->t_tok = TOK_MINUS;
-			break;
 		case '*' :
 			tp->t_tok = TOK_STAR;
+			break;
+		case '@' :
+			tp->t_tok = TOK_ATSIGN;
+			break;
+		case '=' :
+			tp->t_tok = TOK_EQUAL;
+			break;
+		case ';' :
+			tp->t_tok = TOK_SEMI;
 			break;
 		default :
 			tp->t_tok = TOK_ERROR;

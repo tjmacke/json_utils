@@ -28,10 +28,11 @@ TJM_get_args(int argc, char *argv[], int n_flags, FLAG_T flags[], int min_files,
 {
 	int	i;
 	FLAG_T	*fp;
+	int	u_defval;
 	char	*defval = NULL;
+	size_t	s_work = 0;
 	char	*w_name = NULL;
 	char	*w_value = NULL;
-	size_t	s_work = 0;
 	int	a_stat = AS_OK;
 
 	*args = NULL;
@@ -143,9 +144,11 @@ TJM_get_args(int argc, char *argv[], int n_flags, FLAG_T flags[], int min_files,
 					strncpy(w_name, argv[i], eq - argv[i]);
 					w_name[eq - argv[i]] = '\0';
 					strcpy(w_value, &eq[1]);
+					u_defval = 0;
 				}else{
 					strcpy(w_name, argv[i]);
 					strcpy(w_value, "1");
+					u_defval = 1;
 				}
 				if((fp = find_flag_name(w_name, (*args)->an_flags, (*args)->a_flag_idx)) == NULL){
 					LOG_ERROR("unknown flag %s", argv[i]);
@@ -163,6 +166,10 @@ TJM_get_args(int argc, char *argv[], int n_flags, FLAG_T flags[], int min_files,
 							goto CLEAN_UP;
 						}else
 							strcpy(w_value, argv[i]);
+					}else if(fp->f_vkind == AVK_OPT){
+						// Strings w/opt value are special.  Use "" as "was set w/no value"
+						if(fp->f_vtype == AVT_STR && fp->f_defval == NULL && u_defval)
+							strcpy(w_value, "");
 					}
 					if(set_flag_value(fp, w_value)){
 						LOG_ERROR("can't set value for %s", (*args)->a_flags[i].f_name);
@@ -269,9 +276,14 @@ TJM_dump_args(FILE *fp, const ARGS_T *args)
 			fprintf(fp, "\tflags    = NULL\n");
 		else{
 			size_t	maxl_sname, maxl_defvals, l_str;
+			int	n_msg;
 			FLAG_T	*p_flag;
 
-			for(maxl_defvals = maxl_sname = 0, i = 0; i < args->an_flags; i++){
+			for(n_msg = 0, maxl_defvals = maxl_sname = 0, i = 0; i < args->an_flags; i++){
+				if(args->a_flags[i].f_vkind == AVK_MSG){
+					n_msg++;
+					continue;
+				}
 				if((l_str = strlen(args->a_flags[i].f_name)) > maxl_sname)
 					maxl_sname = l_str;
 				if(args->a_flags[i].f_defval != NULL){
@@ -281,9 +293,11 @@ TJM_dump_args(FILE *fp, const ARGS_T *args)
 					maxl_defvals = l_str;
 			}
 
-			fprintf(fp, "\tflags    = %d {\n", args->an_flags);
+			fprintf(fp, "\tflags    = %d {\n", args->an_flags - n_msg);
 			for(i = 0; i < args->an_flags; i++){
 				p_flag = &args->a_flags[i];
+				if(p_flag->f_vkind == AVK_MSG)
+					continue;
 				fprintf(fp, "\t\tname = %-*s", (int)maxl_sname, p_flag->f_name);
 				fprintf(fp, " | isopt = %d", p_flag->f_is_opt);
 				fprintf(fp, " | was_set = %d", p_flag->f_was_set);
@@ -297,6 +311,9 @@ TJM_dump_args(FILE *fp, const ARGS_T *args)
 					break;
 				case AVK_REQ :
 					fprintf(fp, "REQ ");
+					break;
+				case AVK_MSG :
+					fprintf(fp, "MSG ");
 					break;
 				default :
 					fprintf(fp, "ERROR: invalid vkind %d", p_flag->f_vkind);
@@ -381,6 +398,11 @@ TJM_get_flag_value(const ARGS_T *args, const char *fname, int vtype)
 	}
 	if(args->a_flag_idx == NULL){
 		LOG_ERROR("args has not been initialized: call TJM_get_args() before any calls to TJM_get_flag_value()");
+		err = 1;
+		goto CLEAN_UP;
+	}
+	if(fname == NULL || *fname == '\0'){
+		LOG_ERROR("fname is NULL or empty");
 		err = 1;
 		goto CLEAN_UP;
 	}
@@ -532,7 +554,7 @@ set_flag_value(FLAG_T *fp, const char *value)
 		break;
 	case AVT_STR :
 		fp->f_value.av_type = AVT_STR;
-		if(value == NULL || *value == '\0'){
+		if(value == NULL){
 			fp->f_value.av_value.v_str = NULL;
 		}else{
 			fp->f_value.av_value.v_str = strdup(value);
@@ -629,8 +651,9 @@ TJM_print_help_msg(FILE *fp, const ARGS_T *args)
 			}
 		}
 		for(i = 0; i < args->an_flags; i++){
-//			p_flag = args->a_flag_idx[i];
 			p_flag = &args->a_flags[i];
+			if(p_flag->f_vkind == AVK_MSG)
+				continue;
 			for(f = 0; f < N_VFLAGS; f++){
 				switch(f){
 				case VF_NAME :
@@ -718,8 +741,11 @@ TJM_print_help_msg(FILE *fp, const ARGS_T *args)
 
 		// print the flags
 		for(i = 0; i < args->an_flags; i++){
-//			p_flag = args->a_flag_idx[i];
 			p_flag = &args->a_flags[i];
+			if(p_flag->f_vkind == AVK_MSG){
+				fprintf(fp, "\n\t%s\n\n", p_flag->f_descr);
+				continue;
+			}
 			fprintf(fp, "\t");
 			for(f = 0; f < N_VFLAGS; f++){
 				const char	*str;

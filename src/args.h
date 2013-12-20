@@ -8,6 +8,7 @@
 #define	AVK_NONE	0
 #define	AVK_OPT		1
 #define	AVK_REQ		2
+#define	AVK_MSG		3
 
 #define	AVT_BOOL	0
 #define	AVT_INT		1
