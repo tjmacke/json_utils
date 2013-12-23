@@ -981,6 +981,8 @@ JG_value_dump(FILE *fp, const VALUE_T *vp, int ilev)
 		fprintf(fp, "value = %p {\n", vp);
 		mk_indent(fp, ilev);
 		fprintf(fp, "  type = %d\n", vp->v_type);
+		mk_indent(fp, ilev);
+		fprintf(fp, "  attr = %0x\n", vp->v_attr);
 		if(vp->v_type == VT_SLICE){
 			mk_indent(fp, ilev);
 			fprintf(fp, "  low  = ");

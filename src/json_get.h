@@ -10,6 +10,13 @@
 #define	VT_VALS		5	// points to a value table holding another value table with selectors
 #define	VT_VLIST	6	// points to a value table holding another value table with values
 
+// Value attributes.
+#define	VA_VALUE	0x01	// The actual value
+#define	VA_TYPE		0x02	// The value's type
+#define	VA_KEY		0x04	// The key that selected this value from an object
+#define	VA_INDEX	0x04	// The index that selected this value from an array
+#define	VA_SIZE		0x08	// The size of the containing object or array
+
 #define	ND_INDENT	2	// 2 spaces for each indent leven for node_dump()
 
 typedef	struct	slice_t	{
@@ -20,6 +27,7 @@ typedef	struct	slice_t	{
 
 typedef	struct	value_t	{
 	int	v_type;
+	int	v_attr;
 	union	{
 		SLICE_T	v_slice;
 		char	*v_key;

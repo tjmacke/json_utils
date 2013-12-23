@@ -39,10 +39,10 @@ idx_set		: TOK_IDENT TOK_EQUAL idx_list
 get_list	: sel_list
 		| get_list TOK_COMMA sel_list
 		;
-sel_list	: sel_w_meta
-		| sel_list sel_w_meta
+sel_list	: sel_w_vattr
+		| sel_list sel_w_vattr
 		;
-sel_w_meta	: sel meta
+sel_w_vattr	: sel vattr
 		;
 sel		: obj_sel
 		| ary_sel
@@ -75,7 +75,7 @@ elt		: TOK_INT
 		;
 idx_ref		: TOK_ATSIGN TOK_IDENT
 		;
-meta		: TOK_ATSIGN TOK_LPAREN id_list TOK_RPAREN
+vattr		: TOK_ATSIGN TOK_LPAREN id_list TOK_RPAREN
 		| empty
 		;
 id_list		: TOK_IDENT
