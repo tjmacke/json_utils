@@ -92,6 +92,21 @@ ary_index(const char **, TOKEN_T *, NODE_T **, SLICE_T *);
 static	int
 ary_elt(const char **, TOKEN_T *, int *);
 
+static	ATTR_T	attrs[] = {
+	{"index", VA_SELECTOR},
+	{"key", VA_SELECTOR},
+	{"size", VA_SIZE},
+	{"type", VA_TYPE},
+	{"value", VA_VALUE}
+};
+static	int	n_attrs = sizeof(attrs)/sizeof(attrs[0]);
+
+static	int
+get_attrs(const char **, TOKEN_T *, int *, char []);
+
+static	const ATTR_T	*
+find_attr(const char *, int, ATTR_T []);
+
 static	int
 count_arys(const VALUE_T *, int *);
 
@@ -232,6 +247,8 @@ static	int
 selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 {
 	NODE_T	*np_new = NULL;
+	char	attr[N_VATTRS]; 
+	int	n_attr;
 	int	err = 0;
 
 	*np = NULL;
@@ -260,10 +277,21 @@ selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 			err = 1;
 			goto CLEAN_UP;
 		}
-	}else if(tp->t_tok == TOK_STAR){
 	}else{
 		err = 1;
 		goto CLEAN_UP;
+	}
+	if(tp->t_tok == TOK_ATSIGN){
+		token_get(sp, tp);
+		if(get_attrs(sp, tp, &n_attr, attr)){
+			err = 1;
+			goto CLEAN_UP;
+		}
+		memcpy(np_new->n_value->v_attr, attr, n_attr);
+		np_new->n_value->vn_attr = n_attr;
+	}else{
+		np_new->n_value->v_attr[0] = VA_VALUE;
+		np_new->n_value->vn_attr = 1;
 	}
 
 CLEAN_UP : ;
@@ -586,6 +614,92 @@ CLEAN_UP : ;
 		*ival = 0;
 
 	return err;
+}
+
+static	int
+get_attrs(const char **sp, TOKEN_T *tp, int *n_attr, char *attr)
+{
+	const	ATTR_T	*ap;
+	int	h_value = 0;
+	int	err = 0;
+
+	memset(attr, 0, N_VATTRS);
+	*n_attr = 0;
+
+	// Valid attributes are index, key, size, type, value
+	// index and key have value VA_SELECTOR
+	// At least one attribute is requred, so  @() is invalid
+	// if value is present, it must be the last attribute
+
+	if(tp->t_tok == TOK_LPAREN){
+		token_get(sp, tp);
+		while(tp->t_tok == TOK_IDENT){
+			ap = find_attr(tp->t_text, n_attrs, attrs);
+			if(ap == NULL){
+				err = 1;
+				goto CLEAN_UP;
+			}
+			if(*n_attr < N_VATTRS)
+				attr[*n_attr] = ap->a_value;
+			(*n_attr)++;
+			if(ap->a_value == VA_VALUE)
+				h_value = 1;
+			token_get(sp, tp);
+			if(tp->t_tok == TOK_COMMA){
+				token_get(sp, tp);
+			}else
+				break;
+		}
+		if(tp->t_tok == TOK_RPAREN){
+			if(*n_attr < 1){
+				err = 1;
+				goto CLEAN_UP;
+			}else if(*n_attr > N_VATTRS){
+				err = 1;
+				goto CLEAN_UP;
+			}else if(h_value){
+				if(attr[*n_attr - 1] != VA_VALUE){
+					err = 1;
+					goto CLEAN_UP;
+				}
+			}
+			token_get(sp, tp);
+		}else{
+			err = 1;
+			goto CLEAN_UP;
+		}
+	}else{
+		err = 1;
+		goto CLEAN_UP;
+	}
+
+CLEAN_UP : ;
+
+	if(err){
+		memset(attr, 0, N_VATTRS);
+		*n_attr = 0;
+	}
+
+	return err;
+}
+
+static	const ATTR_T	*
+find_attr(const char *aname, int n_atab, ATTR_T atab[])
+{
+	int	i, j, k, cv;
+	const ATTR_T	*ap;
+
+	for(i = 0, j = n_atab - 1; i <= j; ){
+		k = (i + j) / 2;
+		ap = &atab[k];
+		if((cv = strcmp(ap->a_name, aname)) == 0)
+			return ap;
+		else if(cv < 0)
+			i = k + 1;
+		else
+			j = k - 1;
+	}
+	return NULL;
 }
 
 static	TOKEN_T	*
@@ -977,12 +1091,17 @@ JG_value_dump(FILE *fp, const VALUE_T *vp, int ilev)
 		mk_indent(fp, ilev);
 		fprintf(fp, "value = NULL\n");
 	}else{
+		int	i;
+
 		mk_indent(fp, ilev);
 		fprintf(fp, "value = %p {\n", vp);
 		mk_indent(fp, ilev);
 		fprintf(fp, "  type = %d\n", vp->v_type);
 		mk_indent(fp, ilev);
-		fprintf(fp, "  attr = %0x\n", vp->v_attr);
+		fprintf(fp, "  attr = %d {", vp->vn_attr);
+		for(i = 0; i < vp->vn_attr; i++)
+			fprintf(fp, " %d", vp->v_attr[i]);
+		fprintf(fp, "}\n");
 		if(vp->v_type == VT_SLICE){
 			mk_indent(fp, ilev);
 			fprintf(fp, "  low  = ");
