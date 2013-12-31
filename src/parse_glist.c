@@ -9,26 +9,25 @@
 
 #define	TOK_EOF		0
 #define	TOK_IDENT	1
-#define	TOK_INT		2
-#define	TOK_UINT	3
-#define	TOK_STRING	4
-#define	TOK_LCURLY	5
-#define	TOK_RCURLY	6
-#define	TOK_LBRACK	7
-#define	TOK_RBRACK	8
-#define	TOK_LPAREN	9
-#define	TOK_RPAREN	10
-#define	TOK_COMMA	11
-#define	TOK_COLON	12
-#define	TOK_DOLLAR	13
-#define	TOK_MINUS	14
-#define	TOK_STAR	15
-#define	TOK_ATSIGN	16
-#define	TOK_EQUAL	17
-#define	TOK_SEMI	18
-#define	TOK_INDEX	19	// @index?  Use @ as the strop
-#define	TOK_LIST	20
-#define	TOK_ERROR	21
+#define	TOK_UINT	2
+#define	TOK_STRING	3
+#define	TOK_LCURLY	4
+#define	TOK_RCURLY	5
+#define	TOK_LBRACK	6
+#define	TOK_RBRACK	7
+#define	TOK_LPAREN	8
+#define	TOK_RPAREN	9
+#define	TOK_COMMA	10
+#define	TOK_COLON	11
+#define	TOK_DOLLAR	12
+#define	TOK_MINUS	13
+#define	TOK_STAR	14
+#define	TOK_ATSIGN	15
+#define	TOK_EQUAL	16
+#define	TOK_SEMI	17
+#define	TOK_INDEX	18	// @index?  Use @ as the strop
+#define	TOK_LIST	19
+#define	TOK_ERROR	20
 
 typedef	struct	token_t	{
 	int	t_tok;
@@ -551,15 +550,20 @@ ary_index(const char **sp, TOKEN_T *tp, NODE_T **np, SLICE_T *slp)
 		}
 		slp->s_end = ival;
 		if(tp->t_tok == TOK_COLON){
+			int	is_neg = 0;
 			token_get(sp, tp);
-			if(tp->t_tok == TOK_INT || tp->t_tok == TOK_UINT){
+			if(tp->t_tok == TOK_MINUS){
+				is_neg = 1;
+				token_get(sp, tp);
+			}
+			if(tp->t_tok == TOK_UINT){
 				ival = atoi(tp->t_text);
 				if(ival == 0){
 					LOG_ERROR("slice increment can not be 0");
 					err = 1; 
 					goto CLEAN_UP;
 				}
-				slp->s_incr = ival;
+				slp->s_incr = is_neg ? -ival : ival;
 				token_get(sp, tp);
 			}else{
 				err = 1;
@@ -580,7 +584,7 @@ ary_elt(const char **sp, TOKEN_T *tp, int *ival)
 
 	*ival = 0;
 
-	if(tp->t_tok == TOK_INT || tp->t_tok == TOK_UINT){
+	if(tp->t_tok == TOK_UINT){
 		if((*ival = atoi(tp->t_text)) <= 0){
 			LOG_ERROR("bad array index %d, must be > 0", *ival);
 			err = 1;
@@ -761,19 +765,10 @@ token_get(const char **str, TOKEN_T *tp)
 		if(tp->t_text != NULL)
 			free(tp->t_text);
 		tp->t_text  = strndup(t_start, t_end - t_start);
-	}else if(*t_start == '-' || isdigit(*t_start)){
-		if(*t_start == '-'){
-			if(!isdigit(t_start[1])){
-				tp->t_tok = TOK_MINUS;
-				t_end = t_start + 1;
-			}else
-				tp->t_tok = TOK_INT;
-		}else
-			tp->t_tok = TOK_UINT;
-		if(tp->t_tok != TOK_MINUS){
-			for(t_end = t_start + 1; isdigit(*t_end); t_end++)
-				;
-		}
+	}else if(isdigit(*t_start)){
+		tp->t_tok = TOK_UINT;
+		for(t_end = t_start + 1; isdigit(*t_end); t_end++)
+			;
 		if(tp->t_text != NULL)
 			free(tp->t_text);
 		tp->t_text  = strndup(t_start, t_end - t_start);
@@ -860,6 +855,9 @@ token_get(const char **str, TOKEN_T *tp)
 			break;
 		case '$' :
 			tp->t_tok = TOK_DOLLAR;
+			break;
+		case '-' :
+			tp->t_tok = TOK_MINUS;
 			break;
 		case '*' :
 			tp->t_tok = TOK_STAR;
