@@ -86,7 +86,7 @@ static	int
 ary_selector(const char **, TOKEN_T *, NODE_T **);
 
 static	int
-ary_index(const char **, TOKEN_T *, NODE_T **, SLICE_T *);
+ary_index(const char **, TOKEN_T *, NODE_T **, SLICE_T *, int *, char []);
 
 static	int
 ary_elt(const char **, TOKEN_T *, int *);
@@ -369,6 +369,8 @@ key_list(const char **sp, TOKEN_T *tp, NODE_T **np_first)
 	NODE_T	*np_last = NULL;;
 	NODE_T	*np_next = NULL;
 	VALUE_T	*vp = NULL;
+	char	attr[N_VATTRS];
+	int	n_attr;
 	int	err = 0;
 
 	*np_first = NULL;
@@ -380,13 +382,22 @@ key_list(const char **sp, TOKEN_T *tp, NODE_T **np_first)
 		goto CLEAN_UP;
 	}
 	*np_first = node_new(tp->t_tok, vp);
-	if(np_first == NULL){
+	if(*np_first == NULL){
 		LOG_ERROR("node_new failed for key %s", tp->t_text);
 		err = 1;
 		goto CLEAN_UP;
 	}
 	vp = NULL;
 	token_get(sp, tp);
+	if(tp->t_tok == TOK_ATSIGN){
+		token_get(sp, tp);
+		if(get_attrs(sp, tp, &n_attr, attr)){
+			err = 1;
+			goto CLEAN_UP;
+		}
+		memcpy((*np_first)->n_value->v_attr, attr, n_attr);
+		(*np_first)->n_value->vn_attr = n_attr;
+	}
 	for(np_last = *np_first; tp->t_tok == TOK_COMMA; np_last = np_next){
 		token_get(sp, tp);
 		if(tp->t_tok == TOK_IDENT || tp->t_tok == TOK_STRING){
@@ -405,6 +416,15 @@ key_list(const char **sp, TOKEN_T *tp, NODE_T **np_first)
 			vp = NULL;
 			np_last->n_next = np_next;
 			token_get(sp, tp);
+			if(tp->t_tok == TOK_ATSIGN){
+				token_get(sp, tp);
+				if(get_attrs(sp, tp, &n_attr, attr)){
+					err = 1;
+					goto CLEAN_UP;
+				}
+				memcpy(np_next->n_value->v_attr, attr, n_attr);
+				np_next->n_value->vn_attr = n_attr;
+			}
 		}else{
 			err = 1;
 			goto CLEAN_UP;
@@ -435,6 +455,8 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 	int	n_nodes = 0;
 	VALUE_T	*vp = NULL;
 	SLICE_T	slice;
+	char	attr[N_VATTRS];
+	int	n_attr;
 	int	err = 0;
 
 	*np = NULL;
@@ -462,7 +484,7 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 		n_nodes++;
 		token_get(sp, tp);
 	}else{
-		if(ary_index(sp, tp, &np_first, &slice)){
+		if(ary_index(sp, tp, &np_first, &slice, &n_attr, attr)){
 			err = 1;
 			goto CLEAN_UP;
 		}
@@ -472,6 +494,8 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 			err = 1;
 			goto CLEAN_UP;
 		}
+		memcpy(vp->v_attr, attr, n_attr);
+		vp->vn_attr = n_attr;
 		np_first = node_new(TOK_LBRACK, vp);
 		if(np_first == NULL){
 			LOG_ERROR("node_new failed for slice %d:%d", slice.s_begin, slice.s_end);
@@ -482,7 +506,7 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 		n_nodes++;
 		for(np_last = np_first; tp->t_tok == TOK_COMMA; np_last = np_next){
 			token_get(sp, tp);
-			if(ary_index(sp, tp, &np_next, &slice)){
+			if(ary_index(sp, tp, &np_next, &slice, &n_attr, attr)){
 				err = 1;
 				goto CLEAN_UP;
 			}
@@ -492,6 +516,8 @@ ary_selector(const char **sp, TOKEN_T *tp, NODE_T **np)
 				err = 1;
 				goto CLEAN_UP;
 			}
+			memcpy(vp->v_attr, attr, n_attr);
+			vp->vn_attr = n_attr;
 			np_next = node_new(TOK_LBRACK, vp);
 			if(np_next == NULL){
 				LOG_ERROR("node_new failed for slice %d:%d", slice.s_begin, slice.s_end);
@@ -529,13 +555,14 @@ CLEAN_UP : ;
 }
 
 static	int
-ary_index(const char **sp, TOKEN_T *tp, NODE_T **np, SLICE_T *slp)
+ary_index(const char **sp, TOKEN_T *tp, NODE_T **np, SLICE_T *slp, int *n_attr, char attr[])
 {
 	int	ival;
 	int	err = 0;
 
 	*np = NULL;
 	memset(slp, 0, sizeof(SLICE_T));
+	*n_attr = 0;
 
 	if(ary_elt(sp, tp, &ival)){
 		err = 1;
@@ -569,6 +596,13 @@ ary_index(const char **sp, TOKEN_T *tp, NODE_T **np, SLICE_T *slp)
 				err = 1;
 				goto CLEAN_UP;
 			}
+		}
+	}
+	if(tp->t_tok == TOK_ATSIGN){
+		token_get(sp, tp);
+		if(get_attrs(sp, tp, n_attr, attr)){
+			err = 1;
+			goto CLEAN_UP;
 		}
 	}
 
