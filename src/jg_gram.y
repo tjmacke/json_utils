@@ -34,6 +34,7 @@ idx_set_list	: idx_set
 		| idx_set_list TOK_SEMI idx_set
 		;
 idx_set		: TOK_IDENT TOK_EQUAL idx_list
+		| TOK_IDENT TOK_EQUAL TOK_STAR
 		;
 get_list	: sel_list
 		| get_list TOK_COMMA sel_list
@@ -51,7 +52,7 @@ obj_sel		: TOK_LCURLY key_list TOK_RCURLY
 		| TOK_LCURLY TOK_STAR TOK_RCURLY
 		;
 ary_sel		: TOK_LSQUARE idx_list TOK_RSQUARE
-		| TOK_LSQUARE idx_ref TOK_RSQUARE
+		| TOK_LSQUARE idx_ref vattr TOK_RSQUARE
 		| TOK_LSQUARE key_list TOK_RSQUARE
 		| TOK_LSQUARE TOK_STAR TOK_RSQUARE
 		;

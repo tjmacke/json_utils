@@ -31,6 +31,9 @@ static	int
 jr_sprt_json_value(JG_RESULT_T *, const json_t *);
 
 static	int
+jr_sprt_jg_value(JG_RESULT_T *, const VALUE_T *, const json_t *, const char *, size_t, const json_t *);
+
+static	int
 slice_to_indexes(const SLICE_T *, size_t, int *, int *, int *);
 
 static	int
@@ -134,13 +137,16 @@ exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALU
 			json_object_foreach(js_get, key, js_value){
 				if(js_value != NULL){
 					is_primitive = is_json_primitive(js_value);
-					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
+					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1)){
+						// 1.
 						jr_sprt_json_value(jg_result, js_value);
+					}
 					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
 						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 				}else{ 
 					if(EG_verbose)
 						LOG_WARN("no such key: %s", vp->v_value.v_key);
+					// 2.
 					jr_sprt_json_value(jg_result, NULL);
 				}
 			}
@@ -150,13 +156,16 @@ exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALU
 				js_value = json_object_get(js_get, vp->v_value.v_key);
 				if(js_value != NULL){
 					is_primitive = is_json_primitive(js_value);
-					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1))
+					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1)){
+						// 3.
 						jr_sprt_json_value(jg_result, js_value);
+					}
 					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
 						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 				}else{ 
 					if(EG_verbose)
 						LOG_WARN("no such key: %s", vp->v_value.v_key);
+					// 4.
 					jr_sprt_json_value(jg_result, NULL);
 				}
 			}
@@ -190,6 +199,7 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 	const VTAB_T	*vtab;
 	int	i;
 	const VALUE_T	*vp;
+	const VALUE_T	*vp_attr;
 	int	s, s_begin, s_end, s_incr;
 	json_t	*js_value = NULL;
 	int	err = 0;
@@ -200,13 +210,16 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 		vtab = vp_ary->v_value.v_vtab;
 		for(i = 0; i < vtab->vn_vtab; i++){
 			vp = vtab->v_vtab[i];
+			vp_attr = vp->vn_attr != 0 ? vp : vp_ary;
 			// vp is a slice, so need to loop over the slice bounds
 			if(!slice_to_indexes(&vp->v_value.v_slice, s_ary, &s_begin, &s_end, &s_incr)){
 				for(s = s_begin; slice_more(s, s_end, s_incr); s += s_incr){
 					JG_result_array_init(jg_result);
 					js_value = json_array_get(js_get, s - 1);
 					if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-						jr_sprt_json_value(jg_result, js_value);
+						// 5.
+						// jr_sprt_json_value(jg_result, js_value);
+						jr_sprt_jg_value(jg_result, vp_attr, js_get, NULL, s, js_value);
 						if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
 							JG_result_print(jg_result);
 						}
@@ -214,8 +227,8 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 				}
 			}else{
-				// TODO: how to handle bad slices? Skip?
-				LOG_ERROR("bad slice [%d:%d:%d]", vp->v_value.v_slice.s_begin, vp->v_value.v_slice.s_end, vp->v_value.v_slice.s_incr);
+				if(EG_verbose)
+					LOG_WARN("bad slice [%d:%d:%d]", vp->v_value.v_slice.s_begin, vp->v_value.v_slice.s_end, vp->v_value.v_slice.s_incr);
 			}
 		}
 		JG_result_array_pop(jg_result);
@@ -225,10 +238,13 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 			const char	*key;
 
 			JG_result_array_push(jg_result);
+			vp_attr = vp_ary;
 			json_object_foreach(js_get, key, js_value){
 				JG_result_array_init(jg_result);
 				if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-					jr_sprt_json_value(jg_result, js_value);
+					// 6.
+					// jr_sprt_json_value(jg_result, js_value);
+					jr_sprt_jg_value(jg_result, vp_attr, js_get, key, 0, js_value);
 					if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
 						JG_result_print(jg_result);
 					}
@@ -240,11 +256,14 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 			JG_result_array_push(jg_result);
 			for(i = 0; i < vtab->vn_vtab; i++){
 				vp = vtab->v_vtab[i];
+				vp_attr = vp->vn_attr != 0 ? vp : vp_ary;
 				js_value = json_object_get(js_get, vp->v_value.v_key);
 				if(js_value != NULL){
 					JG_result_array_init(jg_result);
 					if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-						jr_sprt_json_value(jg_result, js_value);
+						// 7.
+						// jr_sprt_json_value(jg_result, js_value);
+						jr_sprt_jg_value(jg_result, vp_attr, js_get, vp->v_value.v_key, 0, js_value);
 						if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
 							JG_result_print(jg_result);
 						}
@@ -253,7 +272,6 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 				}else{
 					if(EG_verbose)
 						LOG_WARN("no such key: %s", vp->v_value.v_key);
-					jr_sprt_json_value(jg_result, NULL);
 				}
 			}
 			JG_result_array_pop(jg_result);
@@ -322,6 +340,97 @@ jr_sprt_json_value(JG_RESULT_T *jg_result, const json_t *js_value)
 			goto CLEAN_UP;
 		}
 		JG_result_add(jg_result, str);
+	}
+
+CLEAN_UP : ;
+
+	if(str != NULL)
+		free(str);
+
+	return err;
+}
+
+static	int
+jr_sprt_jg_value(JG_RESULT_T *jg_result, const VALUE_T *vp, const json_t *js_cntnr, const char *key, size_t idx, const json_t *js_value)
+{
+	int	i;
+	char	*str = NULL;
+	char	work[24];
+	size_t	size;
+	int	err = 0;
+
+	for(i = 0; i < vp->vn_attr; i++){
+		switch(vp->v_attr[i]){
+		case VA_VALUE :
+			if(js_value == NULL)
+				JG_result_add(jg_result, "\1");
+			else
+				jr_sprt_json_value(jg_result, js_value);
+			break;
+		case VA_TYPE :
+			if(js_value == NULL)
+				JG_result_add(jg_result, "UNDEFINED");
+			else{
+				switch(json_typeof(js_value)){
+				case JSON_NULL :
+					JG_result_add(jg_result, "NULL");
+					break;
+				case JSON_FALSE :
+					JG_result_add(jg_result, "FALSE");
+					break;
+				case JSON_TRUE :
+					JG_result_add(jg_result, "TRUE");
+					break;
+				case JSON_INTEGER :
+					JG_result_add(jg_result, "INTEGER");
+					break;
+				case JSON_REAL :
+					JG_result_add(jg_result, "REAL");
+					break;
+				case JSON_STRING :
+					JG_result_add(jg_result, "STRING");
+					break;
+				case JSON_OBJECT :
+					JG_result_add(jg_result, "OBJECT");
+					break;
+				case JSON_ARRAY :
+					JG_result_add(jg_result, "ARRAY");
+					break;
+				default :
+					JG_result_add(jg_result, "ERROR");
+					break;
+				}
+			}
+			break;
+		case VA_SELECTOR :
+			if(key != NULL)
+				JG_result_add(jg_result, key);
+			else{
+				sprintf(work, "%ld", idx);
+				JG_result_add(jg_result, work);
+			}
+			break;
+		case VA_SIZE :
+			if(json_typeof(js_cntnr) == JSON_OBJECT){
+				size = json_object_size(js_cntnr);
+				sprintf(work, "%ld", size);
+				JG_result_add(jg_result, work);
+			}else if(json_typeof(js_cntnr) == JSON_ARRAY){
+				size = json_array_size(js_cntnr);
+				sprintf(work, "%ld", size);
+				JG_result_add(jg_result, work);
+			}else{
+				LOG_ERROR("unexpected js_cntnr type = %d, must be array/object", json_typeof(js_cntnr));
+				err = 1;
+				goto CLEAN_UP;
+			}
+			break;
+		default :
+			LOG_ERROR("unexpected vattr %d", vp->v_attr[i]);
+			err = 1;
+			goto CLEAN_UP;
+			break;
+		}
 	}
 
 CLEAN_UP : ;
