@@ -124,6 +124,7 @@ exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALU
 	const VTAB_T	*vtab;
 	int	i;
 	const VALUE_T	*vp;
+	const VALUE_T	*vp_attr;
 	int	s, s_begin, s_end, s_incr;
 	json_t	*js_value = NULL;
 	int	is_primitive;	// no internal structure: null, false, true, int, real, string
@@ -134,39 +135,41 @@ exec_obj_get(JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VALU
 		if(vtab->v_vtab[0]->v_type == VT_STAR){	// {*}
 			const char	*key;
 
+			vp_attr = vp_obj;
 			json_object_foreach(js_get, key, js_value){
 				if(js_value != NULL){
 					is_primitive = is_json_primitive(js_value);
 					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1)){
-						// 1.
-						jr_sprt_json_value(jg_result, js_value);
+						// jr_sprt_json_value(jg_result, js_value);
+						jr_sprt_jg_value(jg_result, vp_attr, js_get, key, 0, js_value);
 					}
 					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
 						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 				}else{ 
 					if(EG_verbose)
 						LOG_WARN("no such key: %s", vp->v_value.v_key);
-					// 2.
-					jr_sprt_json_value(jg_result, NULL);
+					// jr_sprt_json_value(jg_result, NULL);
+					jr_sprt_jg_value(jg_result, vp_attr, js_get, key, 0, NULL);
 				}
 			}
 		}else{
 			for(i = 0; i < vtab->vn_vtab; i++){
 				vp = vtab->v_vtab[i];
+				vp_attr = vp->vn_attr != 0 ? vp : vp_obj;
 				js_value = json_object_get(js_get, vp->v_value.v_key);
 				if(js_value != NULL){
 					is_primitive = is_json_primitive(js_value);
 					if(is_primitive || (c_get == vp_get->v_value.v_vtab->vn_vtab - 1)){
-						// 3.
-						jr_sprt_json_value(jg_result, js_value);
+						// jr_sprt_json_value(jg_result, js_value);
+						jr_sprt_jg_value(jg_result, vp_attr, js_get, vp->v_value.v_key, 0, js_value);
 					}
 					if(!is_primitive && (c_get + 1 < vp_get->v_value.v_vtab->vn_vtab))
 						exec_get(jg_result, js_root, js_value, vp_glist, c_glist, vp_get, c_get + 1);
 				}else{ 
 					if(EG_verbose)
 						LOG_WARN("no such key: %s", vp->v_value.v_key);
-					// 4.
-					jr_sprt_json_value(jg_result, NULL);
+					// jr_sprt_json_value(jg_result, NULL);
+					jr_sprt_jg_value(jg_result, vp_attr, js_get, vp->v_value.v_key, 0, NULL);
 				}
 			}
 		}
@@ -217,7 +220,6 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 					JG_result_array_init(jg_result);
 					js_value = json_array_get(js_get, s - 1);
 					if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-						// 5.
 						// jr_sprt_json_value(jg_result, js_value);
 						jr_sprt_jg_value(jg_result, vp_attr, js_get, NULL, s, js_value);
 						if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
@@ -242,7 +244,6 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 			json_object_foreach(js_get, key, js_value){
 				JG_result_array_init(jg_result);
 				if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-					// 6.
 					// jr_sprt_json_value(jg_result, js_value);
 					jr_sprt_jg_value(jg_result, vp_attr, js_get, key, 0, js_value);
 					if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
@@ -261,7 +262,6 @@ exec_ary_get (JG_RESULT_T *jg_result, json_t *js_root, json_t *js_get, const VAL
 				if(js_value != NULL){
 					JG_result_array_init(jg_result);
 					if(c_get + 1 == vp_get->v_value.v_vtab->vn_vtab){
-						// 7.
 						// jr_sprt_json_value(jg_result, js_value);
 						jr_sprt_jg_value(jg_result, vp_attr, js_get, vp->v_value.v_key, 0, js_value);
 						if(c_glist + 1 == vp_glist->v_value.v_vtab->vn_vtab){
