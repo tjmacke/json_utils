@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <pthread.h>
 
 #include <jansson.h>
@@ -17,7 +20,7 @@ static	FLAG_T	flags[] = {
 	{"-v",    1, AVK_OPT,  AVT_UINT, "0",  "Use -v to set the verbosity to 1, use -v=N to set it to N."},
 	{"-nt",   1, AVK_REQ,  AVT_PINT, "1",  "Use -nt N to set the number of worker threads to N. N > 1 requires -n"},
 	{"-n",    1, AVK_OPT,  AVT_BOOL, "0",  "Use -n to set line mode, ie 1 json blob/line. Absent, the entire input file is one json blob."},
-	{"-g",    0, AVK_REQ,  AVT_STR,  NULL, "Use -g G, G a sequence of json selectors to get values."}
+	{"-g",    0, AVK_REQ,  AVT_STR,  NULL, "Use -g G, where G is list of selectors. Use -g @F to read the selector list from file F."}
 };
 static	int	n_flags = sizeof(flags)/sizeof(flags[0]);
 
@@ -42,6 +45,9 @@ static	int	n_workers;
 static	pthread_t	*workers;
 static	TPARM_T	*wparms;
 
+static	char	*
+read_glist(const char *);
+
 static	void	*
 worker(void *);
 
@@ -52,6 +58,7 @@ main(int argc, char *argv[])
 	const ARG_VAL_T	*a_val;
 	int	nopt = 0;
 	const char	*glist = NULL;
+	char	*glbuf = NULL;
 	json_t	*js_root = NULL;
 	json_error_t	js_err;
 	int	err = 0;
@@ -76,6 +83,15 @@ main(int argc, char *argv[])
 
 	if(verbose > 1)
 		TJM_dump_args(stderr, args);
+
+	// Are the selectors in a file?
+	if(*glist == '@'){
+		if((glbuf = read_glist(glist)) == NULL){
+			err = 1;
+			goto CLEAN_UP;
+		}
+		glist = glbuf;
+	}
 
 	if(n_workers > 1 && !nopt){
 		LOG_ERROR("multi threading (-nt N, N > 1) only works with -n");
@@ -166,9 +182,54 @@ CLEAN_UP : ;
 	if(vp_glist != NULL)
 		JG_value_delete(vp_glist);
 
+	if(glbuf != NULL)
+		free(glbuf);
+
 	TJM_free_args(args);
 
 	exit(err);
+}
+
+char	*
+read_glist(const char *glist)
+{
+	FILE	*glfp = NULL;
+	struct stat	glsbuf;
+	char	*glbuf = NULL;
+	int	err = 0;
+
+	if((glfp = fopen(&glist[1], "r")) == NULL){
+		LOG_ERROR("can't read glist file %s", &glist[1]);
+		err = 1;
+		goto CLEAN_UP;
+	}
+
+	if(fstat(fileno(glfp), &glsbuf)){
+		LOG_ERROR("can't stat glist file %s", &glist[1]);
+		err = 1;
+		goto CLEAN_UP;
+	}
+
+	glbuf = (char *)malloc((glsbuf.st_size + 1) * sizeof(char));
+	if(glbuf == NULL){
+		LOG_ERROR("can't allocate glbuf");
+		err = 1;
+		goto CLEAN_UP;
+	}
+
+	fread(glbuf, sizeof(char), glsbuf.st_size, glfp);
+	glbuf[glsbuf.st_size] = '\0';
+
+CLEAN_UP : ;
+
+	if(err){
+		if(glbuf != NULL){
+			free(glbuf);
+			glbuf = NULL;
+		}
+	}
+
+	return glbuf;
 }
 
 static	void	*
