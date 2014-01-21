@@ -71,6 +71,12 @@ static	void
 mk_indent(FILE*, int);
 
 static	int
+index_set(const char **, TOKEN_T *, INDEX_SET_T **);
+
+static	int
+index_spec(const char **, TOKEN_T *, INDEX_SPEC_T **);
+
+static	int
 selector_list(const char **, TOKEN_T *, NODE_T **);
 
 static	int
@@ -110,7 +116,7 @@ static	int
 count_arys(const VALUE_T *, int *);
 
 int
-JG_parse_glist(const char *glist, VALUE_T **vp_glist, int *n_arys)
+JG_parse_glist(const char *glist, INDEX_SET_T **isp, VALUE_T **vp_glist, int *n_arys)
 {
 	const char	*sp;
 	TOKEN_T	*token = NULL;
@@ -135,6 +141,16 @@ JG_parse_glist(const char *glist, VALUE_T **vp_glist, int *n_arys)
 
 	sp = glist;
 	token_get(&sp, token);
+	if(token->t_tok == TOK_ATSIGN){
+		token_get(&sp, token);
+		if(index_set(&sp, token, isp)){
+			err = 1;
+			goto CLEAN_UP;
+		}
+	}
+
+LOG_DEBUG("token->t_tok = %d", token->t_tok);
+
 	if(selector_list(&sp, token, &np)){
 		err = 1;
 		goto CLEAN_UP;
@@ -205,6 +221,122 @@ CLEAN_UP : ;
 
 	if(token != NULL)
 		token_delete(token);
+
+	return err;
+}
+
+static	int
+index_set(const char **sp, TOKEN_T *tp, INDEX_SET_T **iset)
+{
+	INDEX_SPEC_T	*f_ispec = NULL;
+	INDEX_SPEC_T	*l_ispec, *n_ispec;
+	INDEX_SPEC_T	*ispec = NULL;
+	int	err = 0;
+
+	*iset = NULL;
+
+	// "indexset" "(" "v1" "=" idx [ ";" "vi" "=" idx ] ")"
+	if(tp->t_tok != TOK_IDENT){
+		err = 1;
+		goto CLEAN_UP;
+	}else if(strcmp(tp->t_text, "indexset")){
+		err = 1;
+		goto CLEAN_UP;
+	}
+	token_get(sp, tp);
+	if(tp->t_tok != TOK_LPAREN){
+		err = 1;
+		goto CLEAN_UP;
+	}else{
+		token_get(sp, tp);
+		for( ; tp->t_tok == TOK_IDENT; ){
+			if(index_spec(sp, tp, &ispec)){
+				err = 1;
+				goto CLEAN_UP;
+			}
+			if(f_ispec == NULL)
+				f_ispec = l_ispec = ispec;
+			else
+				l_ispec->i_next = ispec;
+			if(tp->t_tok == TOK_SEMI)
+				token_get(sp, tp);
+			else
+				break;
+		}
+		if(tp->t_tok != TOK_RPAREN){
+			err = 1;
+			goto CLEAN_UP;
+		}
+		token_get(sp, tp);
+		*iset = IS_new_iset(f_ispec);
+		if(*iset == NULL){
+			err = 1;
+			goto CLEAN_UP;
+		}
+	}
+
+CLEAN_UP : ;
+
+	if(err){
+		for(ispec = f_ispec; ispec; ispec = n_ispec){
+			n_ispec = ispec->i_next;
+			IS_delete_ispec(ispec);
+		}
+		if(*iset != NULL){
+			IS_delete_iset(*iset);
+			*iset = NULL;
+		}
+	}
+
+	return err;
+}
+
+static	int
+index_spec(const char **sp, TOKEN_T *tp, INDEX_SPEC_T **ispec)
+{
+	NODE_T	*np_first = NULL;
+	SLICE_T	slice;
+	int	n_attr;
+	char	attr[N_VATTRS];
+	int	err = 0;
+
+	*ispec = IS_new_ispec();
+	if(*ispec == NULL){
+		LOG_ERROR("can't allocate ispec");
+		err = 1;
+		goto CLEAN_UP;
+	}
+	(*ispec)->i_vname = strdup(tp->t_text);
+	if((*ispec)->i_vname == NULL){
+		LOG_ERROR("can't strdup tp->t_text");
+		err = 1;
+		goto CLEAN_UP;
+	}
+	token_get(sp, tp);
+	if(tp->t_tok != TOK_EQUAL){
+		err = 1;
+		goto CLEAN_UP;
+	}
+	token_get(sp, tp);
+	if(tp->t_tok == TOK_STAR){
+		(*ispec)->i_is_hashed = 1;
+		token_get(sp, tp);
+	}else{
+		if(ary_index(sp, tp, &np_first, &slice, &n_attr, attr)){
+			err = 1;
+			goto CLEAN_UP;
+		}
+		(*ispec)->i_begin = slice.s_begin;
+		(*ispec)->i_end = slice.s_end;
+		(*ispec)->i_incr = slice.s_incr;
+	}
+
+CLEAN_UP : ;
+
+	if(err){
+		IS_delete_ispec(*ispec);
+		*ispec = NULL;
+	}
 
 	return err;
 }

@@ -12,6 +12,7 @@
 #include "args.h"
 #include "json_get.h"
 #include "parse_glist.h"
+#include "index_set.h"
 #include "exec_glist.h"
 
 static	ARGS_T	*args;
@@ -59,6 +60,7 @@ main(int argc, char *argv[])
 	int	nopt = 0;
 	const char	*glist = NULL;
 	char	*glbuf = NULL;
+	INDEX_SET_T	*isp = NULL;
 	json_t	*js_root = NULL;
 	json_error_t	js_err;
 	int	err = 0;
@@ -112,13 +114,14 @@ main(int argc, char *argv[])
 
 	ofp = stdout;
 
-	if(JG_parse_glist(glist, &vp_glist, &n_arys)){
+	if(JG_parse_glist(glist, &isp, &vp_glist, &n_arys)){
 		LOG_ERROR("problem w/key");
 		err = 1;
 		goto CLEAN_UP;
 	}
 	if(verbose > 1){
 		fprintf(stderr, "glist = %s\n", glist);
+		IS_dump_iset(stderr, isp);
 		JG_value_dump(stderr, vp_glist, 0);
 	}
 
@@ -181,6 +184,9 @@ CLEAN_UP : ;
 
 	if(vp_glist != NULL)
 		JG_value_delete(vp_glist);
+
+	if(isp != NULL)
+		IS_delete_iset(isp);
 
 	if(glbuf != NULL)
 		free(glbuf);

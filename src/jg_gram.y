@@ -16,7 +16,7 @@
 %token	TOK_ATSIGN
 %token	TOK_EQUAL
 %token	TOK_SEMI
-%token	TOK_INDEX
+%token	TOK_INDEXSET
 %token	TOK_LIST
 %token	TOK_ERROR
 
@@ -25,9 +25,9 @@
  */
 
 %%
-get		: index get_list 
+get		: indexset get_list 
 		;
-index		: TOK_INDEX TOK_LPAREN idx_set_list TOK_RPAREN
+indexset	: TOK_INDEXSET TOK_LPAREN idx_set_list TOK_RPAREN
 		| empty
 		;
 idx_set_list	: idx_set
