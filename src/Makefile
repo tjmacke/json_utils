@@ -6,7 +6,7 @@ CFLAGS=	-g $(INCS)
 LEX=flex
 YACC=bison -y
 
-LIBS=	../lib/libjansson.a
+LIBS=	../lib/libjansson.a -lpthread
 
 PROGRAMS=	\
 	json_fmt	\
