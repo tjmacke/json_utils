@@ -148,9 +148,6 @@ JG_parse_glist(const char *glist, INDEX_SET_T **isp, VALUE_T **vp_glist, int *n_
 			goto CLEAN_UP;
 		}
 	}
-
-LOG_DEBUG("token->t_tok = %d", token->t_tok);
-
 	if(selector_list(&sp, token, &np)){
 		err = 1;
 		goto CLEAN_UP;

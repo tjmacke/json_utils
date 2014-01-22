@@ -117,6 +117,13 @@ TJM_get_args(int argc, char *argv[], int n_flags, FLAG_T flags[], int min_files,
 			a_stat = AS_HELP_ONLY;
 			goto CLEAN_UP;
 		}
+#ifdef	VERSION
+		if(!strcmp(argv[i], "-version")){
+			fprintf(stderr, "Version: %s\n", VERSION);
+			a_stat = AS_HELP_ONLY;
+			goto CLEAN_UP;
+		}
+#endif
 		l_arg = strlen(argv[i]);
 		if(l_arg > s_work)
 			s_work = l_arg;

@@ -1,7 +1,9 @@
+GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always)
+
 INCS=	-I../include
 
 CC=	cc
-CFLAGS=	-g $(INCS)
+CFLAGS=	-g $(INCS) -DVERSION=\"$(GIT_VERSION)\"
 
 LEX=flex
 YACC=bison -y

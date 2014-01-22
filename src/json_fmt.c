@@ -10,9 +10,10 @@
 
 static	ARGS_T	*args;
 static	FLAG_T	flags[] = {
-	{"-help", 1, AVK_NONE, AVT_BOOL, "0", "Use -help to print this message."},
-	{"-v",    1, AVK_OPT,  AVT_UINT, "0", "Use -v to set verbosity to 1, -v=N to it to N."},
-	{"-n",    1, AVK_NONE, AVT_BOOL, "0", "Use -n when each line is a complete json object."}
+	{"-help",    1, AVK_NONE, AVT_BOOL, "0", "Use -help to print this message."},
+	{"-version", 1, AVK_NONE, AVT_BOOL, "0", "Use -version to print the version."},
+	{"-v",       1, AVK_OPT,  AVT_UINT, "0", "Use -v to set verbosity to 1, -v=N to it to N."},
+	{"-n",       1, AVK_NONE, AVT_BOOL, "0", "Use -n when each line is a complete json object."},
 };
 static	int	n_flags = sizeof(flags)/sizeof(flags[0]);
 
