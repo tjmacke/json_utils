@@ -17,6 +17,10 @@
 #define	AVT_REAL	4
 #define	AVT_STR		5
 
+// Use ARGS_n2s() to convert a numeric define to a string that can used as a default value in a flag spec
+#define	ARGS_n2s(s)	_ARGS_str(s)
+#define	_ARGS_str(s)	#s
+
 typedef	struct	arg_val_t	{
 	int	av_type;
 	union	{

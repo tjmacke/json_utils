@@ -20,7 +20,7 @@ static	FLAG_T	flags[] = {
 	{"-help",    1, AVK_NONE, AVT_BOOL, "0",  "Use -help to print this message."},
 	{"-version", 1, AVK_NONE, AVT_BOOL, "0",  "Use -version to print the version."},
 	{"-v",       1, AVK_OPT,  AVT_UINT, "0",  "Use -v to set the verbosity to 1, use -v=N to set it to N."},
-	{"-nt",      1, AVK_REQ,  AVT_PINT, "1",  "Use -nt N to set the number of worker threads to N. N > 1 requires -n"},
+	{"-nt",      1, AVK_REQ,  AVT_PINT, ARGS_n2s(N_WORKERS), "Use -nt N to set the number of worker threads to N. N > 1 requires -n"},
 	{"-n",       1, AVK_OPT,  AVT_BOOL, "0",  "Use -n to set line mode, ie 1 json blob/line. Absent, the entire input file is one json blob."},
 	{"-g",       0, AVK_REQ,  AVT_STR,  NULL, "Use -g G, where G is list of selectors. Use -g @F to read the selector list from file F."}
 };

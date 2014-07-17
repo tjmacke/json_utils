@@ -18,6 +18,8 @@
 
 #define	ND_INDENT	2	// 2 spaces for each indent leven for node_dump()
 
+#define	N_WORKERS	1	// The number of worker threads, as most gets are simple & quick
+
 typedef	struct	attr_t	{
 	const char	*a_name;
 	int	a_value;
