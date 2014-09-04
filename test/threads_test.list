@@ -1,0 +1,1 @@
+yelp_review	'{business_id, date, user_id, review_id, stars}'	yelp_academic_dataset_review.json.gz	| sort -t $'\t' -k 1,1 -k 2,2
