@@ -1,7 +1,10 @@
 #! /bin/bash
 #
-
-. $HOME/etc/funcs.sh
+function LOG {
+	LEV=$1
+	shift
+	echo $(date '+%Y%m%d %H%M%S') T000000: $LEV: ${FUNCNAME[1]}:${BASH_SOURCE[1]}:${BASH_LINENO[0]}: "$*"
+}
 
 U_MSG="usage: $0 [ -help ] [ -ref ] [ test-list-file ]"
 

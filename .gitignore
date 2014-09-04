@@ -17,5 +17,10 @@
 *.out
 *.app
 
-# RCS 
+# Misc. directories
 RCS
+bin
+data
+include
+lib
+notes
