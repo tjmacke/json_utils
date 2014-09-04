@@ -13,7 +13,6 @@ if [ "$JG_HOME" == "" ] ; then
 	exit 1
 fi
 
-JG_HOME=$HOME/json_utils
 BUILD_DIR=$JG_HOME/src
 BINDIR=$JG_HOME/bin
 
