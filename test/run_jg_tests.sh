@@ -46,22 +46,20 @@ fi
 
 grep -v '^#' $TL_FILE	|\
 awk -F'\t' 'BEGIN {
-		mk_ref = "'"$MK_REF"'" == "yes"
-		if(mk_ref){
-			bindir = "'"$BINDIR"'"
-			sfx = "ref"
-		}else{
-			bindir = "'"$BUILD_DIR"'"
-			sfx = "cand"
-		}
-		printf("#! /bin/bash\n")
-		printf("#\n")
-		printf("BINDIR=%s\n", "'"$BINDIR"'")
-		printf("BUILD_DIR=%s\n", "'"$BUILD_DIR"'")
-		printf("#\n")
-		
+	mk_ref = "'"$MK_REF"'" == "yes"
+	if(mk_ref){
+		bindir = "'"$BINDIR"'"
+		sfx = "ref"
+	}else{
+		bindir = "'"$BUILD_DIR"'"
+		sfx = "cand"
 	}
-	NF > 0 {
+	printf("#! /bin/bash\n")
+	printf("#\n")
+	printf("BINDIR=%s\n", bindir)
+	printf("#\n")
+}
+NF > 0 {
 	if(NF == 3 || NF == 4){
 		if(!mk_ref){
 			printf("echo \"=====================================================\"\n")
@@ -71,7 +69,7 @@ awk -F'\t' 'BEGIN {
 		printf("%s/json_get -g %s %s", bindir, $2, $3)
 		if(NF == 4)
 			printf(" %s", $4)
-		printf(" > %s.%s\n", $1,sfx)
+		printf(" > %s.%s\n", $1, sfx)
 		if(!mk_ref){
 			printf("diff %s.cand %s.ref && echo \"  PASSED\" || echo \"    FAILED (possibly; see if diffs above look OK)\"\n", $1, $1)
 			printf("rm -f %s.cand\n", $1)
