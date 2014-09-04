@@ -8,6 +8,11 @@ function LOG {
 
 U_MSG="usage: $0 [ -help ] [ -ref ] [ test-list-file ]"
 
+if [ "$JG_HOME" == "" ] ; then
+	LOG ERROR "JG_HOME not define -- must point to the json_utils directory"
+	exit 1
+fi
+
 JG_HOME=$HOME/json_utils
 BUILD_DIR=$JG_HOME/src
 BINDIR=$JG_HOME/bin
