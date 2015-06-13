@@ -49,7 +49,8 @@ args.o:	args.h log.h
 log.o:	log.h
 
 install:	all
-	mv $(PROGRAMS) ../bin
+	mkdir -p ../bin
+	cp $(PROGRAMS) ../bin
 	rm -f *.o core core.* junk.* jg2_lex.c jg2_gram.h jg2_gram.c
 
 clean:

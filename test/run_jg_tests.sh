@@ -9,8 +9,9 @@ function LOG {
 U_MSG="usage: $0 [ -help ] [ -ref ] [ test-list-file ]"
 
 if [ "$JG_HOME" == "" ] ; then
-	LOG ERROR "JG_HOME not define -- must point to the json_utils directory"
-	exit 1
+	CWD=$(pwd)
+	JG_HOME=$(dirname $CWD)
+	LOG INFO "using JG_HOME  = $JG_HOME"
 fi
 
 BUILD_DIR=$JG_HOME/src
