@@ -61,6 +61,7 @@ awk -F'\t' 'BEGIN {
 	}
 	printf("#! /bin/bash\n")
 	printf("#\n")
+	printf("export LC_ALL=C\n")
 	printf("BINDIR=%s\n", bindir)
 	printf("#\n")
 }

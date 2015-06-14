@@ -70,6 +70,7 @@ awk -F'\t' 'BEGIN {
 	bindir = mk_ref ? "'"$BINDIR"'" : "'"$BUILD_DIR"'"
 	printf("#! /bin/bash\n")
 	printf("#\n")
+	printf("export LC_ALL=C\n")
 	printf("BINDIR=%s\n", bindir)
 	printf("N_THREADS=%d\n", n_threads)
 	printf("#\n")
