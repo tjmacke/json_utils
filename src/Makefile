@@ -11,11 +11,15 @@ YACC=bison -y
 LIBS=	../lib/libjansson.a -lpthread
 
 PROGRAMS=	\
+	json_cmprs	\
 	json_fmt	\
 	json_get	#\
 #	jg2
 
 all:	$(PROGRAMS)
+
+json_cmprs:	json_cmprs.o args.o log.o
+	$(CC)	$(CFLAGS) -o json_cmprs json_cmprs.o args.o log.o
 
 json_fmt:	json_fmt.o args.o log.o
 	$(CC) $(CFLAGS) -o json_fmt json_fmt.o args.o log.o
@@ -25,6 +29,10 @@ json_get:	json_get.o parse_glist.o exec_glist.o index_set.o jg_result.o args.o l
 
 jg2:	jg2.o jg2_gram.o args.o log.o
 	$(CC) $(CFLAGS) -o jg2 jg2.o jg2_gram.o args.o log.o
+
+json_cmprs.o:	args.h log.h
+
+json_fmt.o:	args.h log.h
 
 json_get.o:	json_get.h parse_glist.h exec_glist.h args.h log.h
 

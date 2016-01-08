@@ -24,3 +24,7 @@ data
 include
 lib
 notes
+
+# Misc files
+.gitignore
+.DS_store
