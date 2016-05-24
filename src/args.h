@@ -21,6 +21,11 @@
 #define	ARGS_n2s(s)	_ARGS_str(s)
 #define	_ARGS_str(s)	#s
 
+// Use ARGS_list(hdr, ARGS_list_elt(str, msg), ...)	 to build a multi-line msg for AVK_MSG
+#define	ARGS_list(hdr, ...)		hdr "\n" __VA_ARGS__
+#define	ARGS_list_elt(str, msg)		"\t\t" str "\t\t - " msg "\n"
+#define	ARGS_list_elt_last(str, msg)	"\t\t" str "\t\t - " msg
+
 typedef	struct	arg_val_t	{
 	int	av_type;
 	union	{
