@@ -24,6 +24,7 @@ data
 include
 lib
 notes
+work
 
 # Misc files
 .gitignore
