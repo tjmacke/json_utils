@@ -12,8 +12,8 @@
 
 #define	AVT_BOOL	0
 #define	AVT_INT		1
-#define	AVT_UINT	2	// >= 0
-#define AVT_PINT	3	// > 0
+#define	AVT_UINT	2	/* >= 0 */
+#define AVT_PINT	3	/* > 0 */
 #define	AVT_REAL	4
 #define	AVT_STR		5
 
