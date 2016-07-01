@@ -6,7 +6,8 @@
 #include "log.h"
 #include "jg_result.h"
 
-#define	JGR_BUF_SIZE	1000000
+// TODO: make this dynamic
+#define	JGR_BUF_SIZE	10000000
 #define	JGR_MISSING	'\1'
 
 // These 2 functions handle strings w/tabs, newlines, makeing them safe to be fields in tsv files.
