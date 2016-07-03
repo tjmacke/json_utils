@@ -104,7 +104,7 @@ JG_result_add(JG_RESULT_T *jgr, const char *str)
 		size_t	n_size;
 		char	*tmp = NULL;
 
-		n_size = 1.5 * buf->bs_buf;
+		n_size = 1.5 * need;
 		tmp = realloc(buf->b_buf, n_size);
 		if(tmp == NULL){
 			LOG_ERROR("realloc failed for buf[%d]", jgr->jc_buf);
