@@ -1,6 +1,6 @@
 GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always)
 
-INCS=	-I../include
+INCS=	-I/usr/local/include
 
 CC=	cc
 CFLAGS=	-g $(INCS) -DVERSION=\"$(GIT_VERSION)\"
@@ -8,7 +8,7 @@ CFLAGS=	-g $(INCS) -DVERSION=\"$(GIT_VERSION)\"
 LEX=flex
 YACC=bison -y
 
-LIBS=	../lib/libjansson.a -lpthread
+LIBS=	/usr/local/lib/libjansson.a -lpthread
 
 PROGRAMS=	\
 	json_ary_to_lines	\
